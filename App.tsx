@@ -60,6 +60,7 @@ interface Mill {
     distance_to_nearest: number;
     nearest_facility: string;
     scenario_tags: string[];
+    capacity_ton_per_hour?: number;
     recommendation?: 'Yes' | 'No';
     traceability_level?: string;
     ffb_source_own_pct?: number;
@@ -113,12 +114,14 @@ interface Filters {
     risk: string;
     buyer: string;
     product: string;
+    sourcingStatus: string;
 }
 
 interface UploadData {
     recommendation?: 'Yes' | 'No';
     risk_level?: RiskLevel;
     sourcing_status?: SourcingStatus;
+    capacity_ton_per_hour?: number;
     traceability_level?: string;
     ndpe_violation_found?: boolean;
     public_grievance_flag?: boolean;
@@ -153,6 +156,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 12.4,
     nearest_facility: "GAR Jambi Refinery",
     scenario_tags: ["facility-driven"],
+    capacity_ton_per_hour: 45,
     recommendation: "Yes",
     traceability_level: "100% traceable to mill",
     sourcing_status: "Progressing",
@@ -193,6 +197,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 45.2,
     nearest_facility: "GAR Kalimantan Hub",
     scenario_tags: ["facility-driven", "renewal"],
+    capacity_ton_per_hour: 62,
     recommendation: "Yes",
     traceability_level: "100% traceable to plantation",
     sourcing_status: "Delivering",
@@ -233,6 +238,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 28.7,
     nearest_facility: "GAR Jambi Refinery",
     scenario_tags: ["facility-driven"],
+    capacity_ton_per_hour: 28,
     recommendation: "Yes",
     traceability_level: "95% traceable to plantation",
     sourcing_status: "Commitment & Starting Action",
@@ -277,6 +283,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 18.9,
     nearest_facility: "GAR Riau Processing",
     scenario_tags: ["competitor-check"],
+    capacity_ton_per_hour: 75,
     recommendation: "No",
     traceability_level: "Limited traceability - 60% to plantation",
     sourcing_status: "Known",
@@ -320,6 +327,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 62.1,
     nearest_facility: "GAR Riau Processing",
     scenario_tags: ["competitor-check"],
+    capacity_ton_per_hour: 80,
     recommendation: "No",
     traceability_level: "Low",
     sourcing_status: "Known",
@@ -355,6 +363,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 189.4,
     nearest_facility: "GAR Jambi Refinery",
     scenario_tags: ["renewal"],
+    capacity_ton_per_hour: 35,
     recommendation: "Yes",
     traceability_level: "High",
     sourcing_status: "Awareness",
@@ -387,6 +396,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 15.3,
     nearest_facility: "GAR Jambi Refinery",
     scenario_tags: ["renewal"],
+    capacity_ton_per_hour: 50,
     recommendation: "Yes",
     traceability_level: "High",
     sourcing_status: "Progressing",
@@ -421,6 +431,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 156.3,
     nearest_facility: "GAR Jambi Refinery",
     scenario_tags: ["new-supplier"],
+    capacity_ton_per_hour: 40,
     sourcing_status: "Awareness",
     sourcing_status_last_updated: "2024-10-01",
     current_asana_task_url: "https://app.asana.com/0/123/004-progress",
@@ -451,6 +462,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 78.5,
     nearest_facility: "GAR Kalimantan Hub",
     scenario_tags: ["new-supplier"],
+    capacity_ton_per_hour: 30,
     sourcing_status: "Known",
     sourcing_status_last_updated: "2024-09-28",
     current_asana_task_url: "https://app.asana.com/0/123/011-progress",
@@ -483,6 +495,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 45.7,
     nearest_facility: "GAR Riau Processing",
     scenario_tags: ["new-supplier"],
+    capacity_ton_per_hour: 25,
     sourcing_status: "Unknown",
   },
   {
@@ -503,6 +516,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 22.1,
     nearest_facility: "GAR Jambi Refinery",
     scenario_tags: ["new-supplier"],
+    capacity_ton_per_hour: 55,
     sourcing_status: "Unknown",
   },
   {
@@ -523,6 +537,7 @@ const DEMO_MILLS: Mill[] = [
     distance_to_nearest: 134.2,
     nearest_facility: "GAR Riau Processing",
     scenario_tags: ["competitor-check"],
+    capacity_ton_per_hour: 60,
     competitor_flag: true,
     competitor_buyer: "Wilmar International",
     sourcing_status: "Known",
@@ -671,7 +686,8 @@ const App = () => {
         owner: 'all',
         risk: 'all',
         buyer: 'all',
-        product: 'all'
+        product: 'all',
+        sourcingStatus: 'all',
     });
     
     // Upload wizard state
@@ -766,25 +782,39 @@ const App = () => {
         });
     }, [mills]);
 
-    // Statistics
+    // Statistics for tabs
     const statistics = useMemo(() => {
         const total = enrichedMills.length;
         const eligible = enrichedMills.filter(m => m.evaluation_status === 'Eligible').length;
         const underEvaluation = enrichedMills.filter(m => m.evaluation_status === 'Under Evaluation').length;
         const inNBL = enrichedMills.filter(m => m.nbl_flag).length;
         const notEvaluated = enrichedMills.filter(m => m.evaluation_status === 'Not Evaluated').length;
-        const avgDistance = enrichedMills.reduce((sum, m) => sum + (m.distance_to_nearest || 0), 0) / total;
         
-        return { total, eligible, underEvaluation, inNBL, notEvaluated, avgDistance };
+        return { total, eligible, underEvaluation, inNBL, notEvaluated };
     }, [enrichedMills]);
+    
+    // KPIs for the summary bar (calculated on the full dataset)
+    const summaryKpis = useMemo(() => {
+        const deliveringCount = enrichedMills.filter(m => m.sourcing_status === 'Delivering').length;
+        const atRiskCount = enrichedMills.filter(m => m.risk_level === 'High').length;
+        const total = enrichedMills.length;
+        const deliveringPercentage = total > 0 ? Math.round((deliveringCount / total) * 100) : 0;
+        return {
+            deliveringCount,
+            atRiskCount,
+            deliveringPercentage,
+        }
+    }, [enrichedMills]);
+
 
     // Filtered mills based on scenario, tab, and filters
     const filteredMills = useMemo(() => {
         let result: EnrichedMill[] = [...enrichedMills];
 
         // Apply scenario filter
-        if (activeScenario !== 'all') {
-        result = result.filter(mill => mill.scenario_tags?.includes(activeScenario));
+        if (activeScenario !== 'all' && activeScenario !== 'regional-supply') {
+            result = result.filter(mill => mill.scenario_tags?.includes(activeScenario));
+        }
         
         // Special handling for facility-driven scenario with facility selection
         if (activeScenario === 'facility-driven' && selectedFacility !== 'all') {
@@ -803,7 +833,7 @@ const App = () => {
             // Show only top 3 nearest mills
             result = result.slice(0, 3);
         }
-        }
+        
 
         // Apply tab filter
         if (activeTab === 'eligible') {
@@ -831,6 +861,9 @@ const App = () => {
         }
         if (filters.risk !== 'all') {
         result = result.filter(mill => mill.risk_level === filters.risk);
+        }
+        if (filters.sourcingStatus !== 'all') {
+            result = result.filter(mill => mill.sourcing_status === filters.sourcingStatus);
         }
         
         // Apply buyer filter
@@ -860,6 +893,13 @@ const App = () => {
         return result;
     }, [enrichedMills, activeScenario, activeTab, searchQuery, filters, selectedFacility]);
 
+    const filteredStatistics = useMemo(() => {
+        const totalCapacity = filteredMills.reduce((sum, m) => sum + (m.capacity_ton_per_hour || 0), 0);
+        const totalDistance = filteredMills.reduce((sum, m) => sum + m.nearestFacilityDistance, 0);
+        const avgDistance = filteredMills.length > 0 ? totalDistance / filteredMills.length : 0;
+        return { totalCapacity, avgDistance };
+    }, [filteredMills]);
+
     // Scenario definitions
     const scenarios = [
         {
@@ -884,11 +924,11 @@ const App = () => {
         color: 'purple'
         },
         {
-        id: 'renewal',
-        icon: RotateCcw,
-        title: 'Contract Renewal',
-        description: 'Mills with older evaluations requiring review',
-        color: 'orange'
+        id: 'regional-supply',
+        icon: Landmark,
+        title: 'Regional Supply Potential',
+        description: 'Analyze supply capacity and mill status by region',
+        color: 'teal'
         }
     ];
 
@@ -940,6 +980,7 @@ const App = () => {
                     risk_level: uploadData.risk_level || null,
                     sourcing_status: uploadData.sourcing_status || m.sourcing_status,
                     sourcing_status_last_updated: m.sourcing_status !== uploadData.sourcing_status ? today : m.sourcing_status_last_updated,
+                    capacity_ton_per_hour: uploadData.capacity_ton_per_hour,
                     recommendation: uploadData.recommendation,
                     traceability_level: uploadData.traceability_level,
                     ffb_source_own_pct: uploadData.ffb_source_own_pct,
@@ -990,7 +1031,7 @@ const App = () => {
         setActiveTab('all');
         setSearchQuery('');
         setSelectedFacility('all');
-        setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all' });
+        setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all', sourcingStatus: 'all' });
         showToast('Demo data reset successfully!', 'success');
     };
 
@@ -1018,6 +1059,109 @@ const App = () => {
         return colors[status] || 'bg-gray-100 text-gray-800 border-gray-300';
     };
 
+    const RegionalSummaryView = ({ mills }: { mills: EnrichedMill[] }) => {
+        const regionalData = useMemo(() => {
+            const regions: { [key: string]: EnrichedMill[] } = {};
+            mills.forEach(mill => {
+                if (!regions[mill.region]) {
+                    regions[mill.region] = [];
+                }
+                regions[mill.region].push(mill);
+            });
+
+            return Object.entries(regions).map(([region, millsInRegion]) => {
+                const totalCapacity = millsInRegion.reduce((sum, m) => sum + (m.capacity_ton_per_hour || 0), 0);
+                const statusCounts = millsInRegion.reduce((counts, m) => {
+                    counts[m.evaluation_status] = (counts[m.evaluation_status] || 0) + 1;
+                    return counts;
+                }, {} as { [key in EvaluationStatus]?: number });
+
+                const garBuyers = millsInRegion.filter(m => m.transactions.some(t => t.buyer_type === 'gar')).length;
+                const competitorBuyers = millsInRegion.filter(m => m.hasCompetitor).length;
+
+                return {
+                    region,
+                    totalMills: millsInRegion.length,
+                    totalCapacity,
+                    statusCounts,
+                    garBuyers,
+                    competitorBuyers
+                };
+            }).sort((a,b) => b.totalCapacity - a.totalCapacity); // Sort by capacity desc
+        }, [mills]);
+
+        if (regionalData.length === 0) {
+            return (
+                <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+                    <Database className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">No mills match your current filters.</h3>
+                    <p className="text-sm text-gray-500 mt-1">Try adjusting your search or filter criteria.</p>
+                </div>
+            )
+        }
+
+        return (
+            <div className="space-y-4">
+                {regionalData.map(data => (
+                    <div key={data.region} className="bg-white rounded-lg shadow-sm border">
+                        <div className="p-4 border-b border-gray-200 bg-gray-50">
+                            <h2 className="text-lg font-bold text-gray-900">{data.region}</h2>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 p-4">
+                            {/* Capacity and Totals */}
+                            <div className="col-span-1 space-y-4">
+                                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-sm text-blue-800">Total Capacity</p>
+                                    <p className="text-3xl font-bold text-blue-900">{data.totalCapacity.toLocaleString()} <span className="text-lg font-medium">T/H</span></p>
+                                </div>
+                                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <p className="text-sm text-gray-700">Total Mills</p>
+                                    <p className="text-3xl font-bold text-gray-900">{data.totalMills}</p>
+                                </div>
+                            </div>
+                            {/* Status Breakdown */}
+                            <div className="col-span-1 border-l border-r border-gray-200 px-4">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-2">Status Breakdown</h3>
+                                <div className="space-y-2">
+                                    {Object.entries(data.statusCounts).map(([status, count]) => (
+                                        <div key={status} className="flex justify-between items-center text-sm">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeColor(status as EvaluationStatus)}`}>{status}</span>
+                                            <span className="font-medium text-gray-800">{count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            {/* Buyer Distribution */}
+                            <div className="col-span-1">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-2">Buyer Distribution</h3>
+                                <div className="space-y-3">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                            <CheckCircle className="w-5 h-5 text-green-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900">{data.garBuyers} Mills</p>
+                                            <p className="text-xs text-gray-600">Supplying to GAR</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900">{data.competitorBuyers} Mills</p>
+                                            <p className="text-xs text-gray-600">Supplying to Competitor</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
 
     const UploadWizard = () => {
         const isEditMode = !!uploadMill?.current_evaluation_id;
@@ -1035,7 +1179,8 @@ const App = () => {
                 hotspot_alerts: 0,
                 ffb_source_own_pct: 55,
                 ffb_source_plasma_pct: 35,
-                ffb_source_independent_pct: 10
+                ffb_source_independent_pct: 10,
+                capacity_ton_per_hour: 42,
                 });
                 setIsUploading(false);
                 setUploadStep(3);
@@ -1187,6 +1332,16 @@ const App = () => {
                             <option value="Low">Low</option>
                         </select>
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Ton/Hour)</label>
+                            <input
+                                type="number"
+                                value={uploadData.capacity_ton_per_hour || ''}
+                                onChange={(e) => setUploadData({...uploadData, capacity_ton_per_hour: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                placeholder="e.g., 45"
+                            />
+                        </div>
                     </div>
     
                     <div className="grid grid-cols-2 gap-4">
@@ -1273,6 +1428,7 @@ const App = () => {
                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                         <p className="text-sm"><strong>Mill:</strong> {uploadMill.mill_name}</p>
                         <p className="text-sm"><strong>Sourcing Status:</strong> {uploadData.sourcing_status}</p>
+                        <p className="text-sm"><strong>Capacity:</strong> {uploadData.capacity_ton_per_hour} T/H</p>
                         <p className="text-sm"><strong>Recommendation:</strong> {uploadData.recommendation}</p>
                         <p className="text-sm"><strong>Risk Level:</strong> {uploadData.risk_level}</p>
                         <p className="text-sm"><strong>Eligibility:</strong> {uploadData.recommendation === 'Yes' && !uploadData.ndpe_violation_found ? 'Eligible' : 'Not Eligible'}</p>
@@ -1324,6 +1480,7 @@ const App = () => {
                                         recommendation: millToEdit.recommendation,
                                         risk_level: millToEdit.risk_level,
                                         sourcing_status: millToEdit.sourcing_status,
+                                        capacity_ton_per_hour: millToEdit.capacity_ton_per_hour,
                                         traceability_level: millToEdit.traceability_level,
                                         ndpe_violation_found: millToEdit.ndpe_violation_found,
                                         public_grievance_flag: millToEdit.public_grievance_flag,
@@ -1529,12 +1686,14 @@ const App = () => {
               <select
                 value={selectedFacility}
                 onChange={(e) => setSelectedFacility(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3 py-2 text-sm text-gray-900 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
               >
                 <option value="all">All Mills (no facility filter)</option>
-                <option value="Libo">Libo (GAR Jambi Refinery)</option>
-                <option value="Lubuk Gaung">Lubuk Gaung (GAR Riau Processing)</option>
-                <option value="Dumai">Dumai (GAR Kalimantan Hub)</option>
+                {DEMO_FACILITIES.map(facility => (
+                  <option key={facility.facility_id} value={facility.code}>
+                    {facility.code} ({facility.facility_name})
+                  </option>
+                ))}
               </select>
               {selectedFacility !== 'all' && (
                 <p className="mt-2 text-xs text-blue-700">
@@ -1545,43 +1704,63 @@ const App = () => {
           )}
         </div>
 
-        {/* Statistics */}
+        {/* New KPI Summary Bar */}
         <div className="grid grid-cols-5 gap-3 mb-4">
-          <div className="bg-white rounded-lg shadow-sm border p-3">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-600">Total Mills</p>
-              <Database className="w-4 h-4 text-gray-400" />
+            <button
+                onClick={() => { setActiveTab('eligible'); setFilters(f => ({...f, risk: 'all', sourcingStatus: 'all'})); }}
+                className="bg-white rounded-lg shadow-sm border p-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+                <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-600">Eligible Mills</p>
+                    <UserCheck className="w-4 h-4 text-green-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{statistics.eligible}</p>
+            </button>
+            <button
+                onClick={() => { setActiveTab('all'); setFilters(f => ({...f, sourcingStatus: 'Delivering', risk: 'all'})); }}
+                className="bg-white rounded-lg shadow-sm border p-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+                <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-600">Delivering</p>
+                    <Droplet className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">
+                    {summaryKpis.deliveringCount}
+                    <span className="text-base font-medium text-gray-500 ml-1">
+                        / {statistics.total} ({summaryKpis.deliveringPercentage}%)
+                    </span>
+                </p>
+            </button>
+            <div className="bg-white rounded-lg shadow-sm border p-3">
+                <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-600">Filtered Capacity</p>
+                    <Scale className="w-4 h-4 text-gray-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">
+                    {filteredStatistics.totalCapacity.toLocaleString()}
+                    <span className="text-base font-medium text-gray-500"> T/H</span>
+                </p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{statistics.total}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border p-3">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-600">Eligible</p>
-              <CheckCircle className="w-4 h-4 text-green-500" />
+            <div className="bg-white rounded-lg shadow-sm border p-3">
+                <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-600">Avg. Distance</p>
+                    <Navigation className="w-4 h-4 text-gray-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">
+                    {filteredStatistics.avgDistance.toFixed(1)}
+                    <span className="text-base font-medium text-gray-500"> km</span>
+                </p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{statistics.eligible}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border p-3">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-600">Under Review</p>
-              <Clock className="w-4 h-4 text-orange-500" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{statistics.underEvaluation}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border p-3">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-600">Not Evaluated</p>
-              <AlertTriangle className="w-4 h-4 text-gray-400" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{statistics.notEvaluated}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border p-3">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-600">In NBL</p>
-              <XCircle className="w-4 h-4 text-red-500" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{statistics.inNBL}</p>
-          </div>
+            <button
+                onClick={() => { setActiveTab('all'); setFilters(f => ({...f, risk: 'High', sourcingStatus: 'all'})); }}
+                className="bg-white rounded-lg shadow-sm border p-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+                <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-600">At-Risk Mills</p>
+                    <ShieldAlert className="w-4 h-4 text-red-500" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{summaryKpis.atRiskCount}</p>
+            </button>
         </div>
 
         {/* Tabs */}
@@ -1689,7 +1868,7 @@ const App = () => {
             )}
             
             {/* Active Filters Display */}
-            {(filters.buyer !== 'all' || filters.product !== 'all' || filters.region !== 'all' || filters.risk !== 'all') && (
+            {(filters.buyer !== 'all' || filters.product !== 'all' || filters.region !== 'all' || filters.risk !== 'all' || filters.sourcingStatus !== 'all') && (
               <div className="mt-3 flex items-center flex-wrap gap-2">
                 <span className="text-xs text-gray-600">Active filters:</span>
                 {filters.buyer !== 'all' && (
@@ -1736,8 +1915,19 @@ const App = () => {
                     </button>
                   </span>
                 )}
+                 {filters.sourcingStatus !== 'all' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-cyan-100 text-cyan-800 border border-cyan-300">
+                    Sourcing Status: {filters.sourcingStatus}
+                    <button 
+                      onClick={() => setFilters({...filters, sourcingStatus: 'all'})}
+                      className="ml-1 hover:text-cyan-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
                 <button
-                  onClick={() => setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all' })}
+                  onClick={() => setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all', sourcingStatus: 'all' })}
                   className="text-xs text-gray-600 hover:text-gray-900 underline"
                 >
                   Clear all
@@ -1747,7 +1937,10 @@ const App = () => {
           </div>
         </div>
 
-        {/* Mills Table */}
+        {/* Mills Table or Regional Summary */}
+        {activeScenario === 'regional-supply' ? (
+          <RegionalSummaryView mills={filteredMills} />
+        ) : (
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -1761,6 +1954,7 @@ const App = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Distance</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Updated</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity (T/H)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
@@ -1825,6 +2019,9 @@ const App = () => {
                         <span className="text-xs text-gray-400">N/A</span>
                       )}
                     </td>
+                     <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      {mill.capacity_ton_per_hour ? `${mill.capacity_ton_per_hour} T/H` : 'N/A'}
+                    </td>
                     <td className="px-4 py-3 text-sm space-x-2 whitespace-nowrap">
                         <button
                             onClick={() => {
@@ -1856,6 +2053,7 @@ const App = () => {
                                                     recommendation: millToModify.recommendation,
                                                     risk_level: millToModify.risk_level,
                                                     sourcing_status: millToModify.sourcing_status,
+                                                    capacity_ton_per_hour: millToModify.capacity_ton_per_hour,
                                                     traceability_level: millToModify.traceability_level,
                                                     ndpe_violation_found: millToModify.ndpe_violation_found,
                                                     public_grievance_flag: millToModify.public_grievance_flag,
@@ -1899,6 +2097,7 @@ const App = () => {
             </p>
           </div>
         </div>
+        )}
       </div>
             </div>
         )
@@ -1955,8 +2154,8 @@ const App = () => {
                         <p className="font-medium text-sm text-gray-900">{selectedMill.region}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Island</p>
-                        <p className="font-medium text-sm text-gray-900">{selectedMill.island}</p>
+                        <p className="text-sm text-gray-600">Capacity (T/H)</p>
+                        <p className="font-medium text-sm text-gray-900">{selectedMill.capacity_ton_per_hour} T/H</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Distance to Nearest</p>
