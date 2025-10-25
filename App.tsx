@@ -137,7 +137,7 @@ interface UploadData {
 // ============================================
 
 const DEMO_MILLS: Mill[] = [
-  // ✅ ELIGIBLE MILLS (3)
+  // ✅ ELIGIBLE MILLS (5)
   {
     mill_id: "PO1000001",
     mill_name: "Forest Green Palm Mill",
@@ -241,7 +241,7 @@ const DEMO_MILLS: Mill[] = [
     capacity_ton_per_hour: 28,
     recommendation: "Yes",
     traceability_level: "95% traceable to plantation",
-    sourcing_status: "Commitment & Starting Action",
+    sourcing_status: "Delivering",
     sourcing_status_last_updated: "2024-07-20",
     ffb_source_own_pct: 55,
     ffb_source_plasma_pct: 35,
@@ -260,6 +260,72 @@ const DEMO_MILLS: Mill[] = [
     current_asana_task_url: "https://app.asana.com/0/123/005",
     current_eval_doc_url: "https://docs.example.com/eval_005.pdf",
     attachment_url: "https://drive.google.com/eval_005.pdf"
+  },
+   {
+    mill_id: "PO1000009",
+    mill_name: "Riau Central Mill",
+    parent_group: "Independent Supplier",
+    group_engagement: "Active",
+    region: "Riau",
+    province_en: "Riau",
+    island: "Sumatra",
+    latitude: -2.3307,
+    longitude: 99.8453,
+    evaluation_status: "Eligible",
+    current_evaluation_id: "EVAL2023_009",
+    last_updated: "2023-08-15",
+    risk_level: "Low",
+    nbl_flag: false,
+    distance_to_nearest: 189.4,
+    nearest_facility: "GAR Riau Processing",
+    scenario_tags: ["renewal"],
+    capacity_ton_per_hour: 35,
+    recommendation: "Yes",
+    traceability_level: "High",
+    sourcing_status: "Delivering",
+    sourcing_status_last_updated: "2023-08-10",
+    ffb_source_own_pct: 45,
+    ffb_source_plasma_pct: 40,
+    ffb_source_independent_pct: 15,
+    ndpe_violation_found: false,
+    public_grievance_flag: false,
+    deforestation_alerts: 0,
+    hotspot_alerts: 0,
+    current_asana_task_url: null,
+    current_eval_doc_url: "https://docs.example.com/eval_009.pdf"
+  },
+  {
+    mill_id: "PO1000010",
+    mill_name: "Jambi Delta Mill",
+    parent_group: "Sustainable Palm Industries",
+    group_engagement: "Active",
+    region: "Jambi",
+    province_en: "Jambi",
+    island: "Sumatra",
+    latitude: -1.5200,
+    longitude: 103.4500,
+    evaluation_status: "Eligible",
+    current_evaluation_id: "EVAL2024_010",
+    last_updated: "2024-11-20",
+    risk_level: "Low",
+    nbl_flag: false,
+    distance_to_nearest: 15.3,
+    nearest_facility: "GAR Jambi Refinery",
+    scenario_tags: ["renewal"],
+    capacity_ton_per_hour: 50,
+    recommendation: "Yes",
+    traceability_level: "High",
+    sourcing_status: "Delivering",
+    sourcing_status_last_updated: "2024-11-15",
+    ffb_source_own_pct: 50,
+    ffb_source_plasma_pct: 35,
+    ffb_source_independent_pct: 15,
+    ndpe_violation_found: false,
+    public_grievance_flag: false,
+    deforestation_alerts: 0,
+    hotspot_alerts: 0,
+    current_asana_task_url: "https://app.asana.com/0/123/010",
+    current_eval_doc_url: "https://docs.example.com/eval_010.pdf"
   },
 
   // 🟥 NBL MILLS (2)
@@ -342,74 +408,6 @@ const DEMO_MILLS: Mill[] = [
     current_asana_task_url: "https://app.asana.com/0/123/006",
     current_eval_doc_url: "https://docs.example.com/eval_006.pdf",
     competitor_flag: true
-  },
-
-  // 🟨 Previously EXPIRED / EXPIRING SOON, now just ELIGIBLE with old update dates (2)
-  {
-    mill_id: "PO1000009",
-    mill_name: "Expired Mill Alpha",
-    parent_group: "Independent Supplier",
-    group_engagement: "Active",
-    region: "Sumatra",
-    province_en: "South Sumatra",
-    island: "Sumatra",
-    latitude: -2.3307,
-    longitude: 99.8453,
-    evaluation_status: "Eligible",
-    current_evaluation_id: "EVAL2023_009",
-    last_updated: "2023-08-15",
-    risk_level: "Low",
-    nbl_flag: false,
-    distance_to_nearest: 189.4,
-    nearest_facility: "GAR Jambi Refinery",
-    scenario_tags: ["renewal"],
-    capacity_ton_per_hour: 35,
-    recommendation: "Yes",
-    traceability_level: "High",
-    sourcing_status: "Awareness",
-    sourcing_status_last_updated: "2023-08-10",
-    ffb_source_own_pct: 45,
-    ffb_source_plasma_pct: 40,
-    ffb_source_independent_pct: 15,
-    ndpe_violation_found: false,
-    public_grievance_flag: false,
-    deforestation_alerts: 0,
-    hotspot_alerts: 0,
-    current_asana_task_url: null,
-    current_eval_doc_url: "https://docs.example.com/eval_009.pdf"
-  },
-  {
-    mill_id: "PO1000010",
-    mill_name: "Expiring Soon Mill Beta",
-    parent_group: "Sustainable Palm Industries",
-    group_engagement: "Active",
-    region: "Jambi",
-    province_en: "Jambi",
-    island: "Sumatra",
-    latitude: -1.5200,
-    longitude: 103.4500,
-    evaluation_status: "Eligible",
-    current_evaluation_id: "EVAL2024_010",
-    last_updated: "2024-11-20",
-    risk_level: "Low",
-    nbl_flag: false,
-    distance_to_nearest: 15.3,
-    nearest_facility: "GAR Jambi Refinery",
-    scenario_tags: ["renewal"],
-    capacity_ton_per_hour: 50,
-    recommendation: "Yes",
-    traceability_level: "High",
-    sourcing_status: "Progressing",
-    sourcing_status_last_updated: "2024-11-15",
-    ffb_source_own_pct: 50,
-    ffb_source_plasma_pct: 35,
-    ffb_source_independent_pct: 15,
-    ndpe_violation_found: false,
-    public_grievance_flag: false,
-    deforestation_alerts: 0,
-    hotspot_alerts: 0,
-    current_asana_task_url: "https://app.asana.com/0/123/010",
-    current_eval_doc_url: "https://docs.example.com/eval_010.pdf"
   },
 
   // 🟧 UNDER EVALUATION (2)
@@ -569,11 +567,11 @@ const DEMO_TRANSACTIONS: Transaction[] = [
   // Northern Territory Mill (NBL) - Wilmar
   { mill_id: "PO1000006", buyer_entity: "Wilmar International", buyer_type: "competitor", product_type: "CPO", last_verified: "2025-10-01" },
   
-  // Expired Mill Alpha - Multiple buyers
+  // Riau Central Mill - Multiple buyers
   { mill_id: "PO1000009", buyer_entity: "GAR Trading", buyer_type: "gar", product_type: "CPO", last_verified: "2024-08-10" },
   { mill_id: "PO1000009", buyer_entity: "APC", buyer_type: "gar", product_type: "PK", last_verified: "2024-08-05" },
   
-  // Expiring Soon Mill Beta - GAR + SDG
+  // Jambi Delta Mill - GAR + SDG
   { mill_id: "PO1000010", buyer_entity: "GAR Trading", buyer_type: "gar", product_type: "CPO", last_verified: "2025-10-15" },
   { mill_id: "PO1000010", buyer_entity: "SDG", buyer_type: "gar", product_type: "PK", last_verified: "2025-10-14" },
   
@@ -627,12 +625,12 @@ const MILL_FACILITY_DISTANCES: MillFacilityDistance[] = [
   { mill_id: "PO1000006", facility_name: "Dumai", distance_km: 134.8, ranking: 2 },
   { mill_id: "PO1000006", facility_name: "Libo", distance_km: 198.5, ranking: 3 },
   
-  // Expired Mill Alpha (PO1000009)
-  { mill_id: "PO1000009", facility_name: "Libo", distance_km: 189.4, ranking: 1 },
-  { mill_id: "PO1000009", facility_name: "Lubuk Gaung", distance_km: 267.3, ranking: 2 },
-  { mill_id: "PO1000009", facility_name: "Dumai", distance_km: 312.6, ranking: 3 },
+  // Riau Central Mill (PO1000009)
+  { mill_id: "PO1000009", facility_name: "Lubuk Gaung", distance_km: 189.4, ranking: 1 },
+  { mill_id: "PO1000009", facility_name: "Dumai", distance_km: 267.3, ranking: 2 },
+  { mill_id: "PO1000009", facility_name: "Libo", distance_km: 312.6, ranking: 3 },
   
-  // Expiring Soon Mill Beta (PO1000010)
+  // Jambi Delta Mill (PO1000010)
   { mill_id: "PO1000010", facility_name: "Libo", distance_km: 15.3, ranking: 1 },
   { mill_id: "PO1000010", facility_name: "Lubuk Gaung", distance_km: 93.7, ranking: 2 },
   { mill_id: "PO1000010", facility_name: "Dumai", distance_km: 151.2, ranking: 3 },
@@ -690,6 +688,10 @@ const App = () => {
         sourcingStatus: 'all',
     });
     
+    // State for interactive KPI cards
+    const [activeKpiFilter, setActiveKpiFilter] = useState<string | null>(null);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
     // Upload wizard state
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [uploadStep, setUploadStep] = useState(1);
@@ -730,16 +732,13 @@ const App = () => {
         return mills.map(mill => {
         const transactions = DEMO_TRANSACTIONS.filter(t => t.mill_id === mill.mill_id);
         
-        // Compute buyer summary
         const uniqueBuyers = [...new Set(transactions.map(t => t.buyer_entity))];
         const buyerSummary = uniqueBuyers.join(', ');
         const hasCompetitor = transactions.some(t => t.buyer_type === 'competitor');
         
-        // Compute product summary
         const uniqueProducts = [...new Set(transactions.map(t => t.product_type))];
         const productSummary = uniqueProducts.join(', ');
         
-        // Group transactions by buyer for tooltip
         const buyerProductMap: {[key: string]: {products: Set<string>, type: 'gar' | 'competitor', lastVerified: string}} = {};
         transactions.forEach(t => {
             if (!buyerProductMap[t.buyer_entity]) {
@@ -752,7 +751,6 @@ const App = () => {
             buyerProductMap[t.buyer_entity].products.add(t.product_type);
         });
         
-        // Convert to array for easier rendering
         const buyerDetails = Object.entries(buyerProductMap).map(([buyer, data]) => ({
             buyer,
             products: Array.from(data.products).join(', '),
@@ -760,10 +758,8 @@ const App = () => {
             lastVerified: data.lastVerified
         }));
         
-        // Get facility distances for this mill
         const facilityDistances = MILL_FACILITY_DISTANCES.filter(f => f.mill_id === mill.mill_id);
         
-        // Get nearest facility (ranking 1)
         const nearestFacilityData = facilityDistances.find(f => f.ranking === 1);
         const nearestFacilityName = nearestFacilityData?.facility_name || mill.nearest_facility || 'N/A';
         const nearestFacilityDistance = nearestFacilityData?.distance_km || mill.distance_to_nearest || 0;
@@ -782,7 +778,6 @@ const App = () => {
         });
     }, [mills]);
 
-    // Statistics for tabs
     const statistics = useMemo(() => {
         const total = enrichedMills.length;
         const eligible = enrichedMills.filter(m => m.evaluation_status === 'Eligible').length;
@@ -793,7 +788,6 @@ const App = () => {
         return { total, eligible, underEvaluation, inNBL, notEvaluated };
     }, [enrichedMills]);
     
-    // KPIs for the summary bar (calculated on the full dataset)
     const summaryKpis = useMemo(() => {
         const deliveringCount = enrichedMills.filter(m => m.sourcing_status === 'Delivering').length;
         const atRiskCount = enrichedMills.filter(m => m.risk_level === 'High').length;
@@ -806,19 +800,54 @@ const App = () => {
         }
     }, [enrichedMills]);
 
+    const handleClearKpiFilter = () => {
+        if (activeKpiFilter) {
+            if (activeKpiFilter === 'eligible') setActiveTab('all');
+            if (activeKpiFilter === 'delivering') setFilters(f => ({ ...f, sourcingStatus: 'all' }));
+            if (activeKpiFilter === 'at-risk') setFilters(f => ({ ...f, risk: 'all' }));
+            if (activeKpiFilter === 'capacity' || activeKpiFilter === 'distance') setSortConfig(null);
+        }
+        setActiveKpiFilter(null);
+    };
 
-    // Filtered mills based on scenario, tab, and filters
+    const handleKpiClick = (kpi: string) => {
+        if (activeKpiFilter === kpi) {
+            handleClearKpiFilter();
+            return;
+        }
+
+        handleClearKpiFilter(); // Clear previous KPI filter before applying new one
+
+        setActiveKpiFilter(kpi);
+
+        switch (kpi) {
+            case 'eligible':
+                setActiveTab('eligible');
+                break;
+            case 'delivering':
+                setFilters(f => ({ ...f, sourcingStatus: 'Delivering' }));
+                break;
+            case 'at-risk':
+                setFilters(f => ({ ...f, risk: 'High' }));
+                break;
+            case 'capacity':
+                setSortConfig({ key: 'capacity_ton_per_hour', direction: 'desc' });
+                break;
+            case 'distance':
+                setSortConfig({ key: 'distance', direction: 'asc' });
+                break;
+        }
+    };
+
+
     const filteredMills = useMemo(() => {
         let result: EnrichedMill[] = [...enrichedMills];
 
-        // Apply scenario filter
         if (activeScenario !== 'all' && activeScenario !== 'regional-supply') {
             result = result.filter(mill => mill.scenario_tags?.includes(activeScenario));
         }
         
-        // Special handling for facility-driven scenario with facility selection
         if (activeScenario === 'facility-driven' && selectedFacility !== 'all') {
-            // Get mills with their distance to the selected facility
             result = result.map(mill => {
             const facilityData = mill.facilityDistances.find(f => f.facility_name === selectedFacility);
             return {
@@ -826,25 +855,18 @@ const App = () => {
                 distanceToSelectedFacility: facilityData?.distance_km || Infinity
             };
             });
-            
-            // Sort by distance to selected facility (ascending)
             result.sort((a, b) => (a as any).distanceToSelectedFacility - (b as any).distanceToSelectedFacility);
-            
-            // Show only top 3 nearest mills
             result = result.slice(0, 3);
         }
-        
 
-        // Apply tab filter
         if (activeTab === 'eligible') {
-        result = result.filter(m => m.evaluation_status === 'Eligible');
+            result = result.filter(m => m.evaluation_status === 'Eligible');
         } else if (activeTab === 'under-evaluation') {
-        result = result.filter(m => m.evaluation_status === 'Under Evaluation');
+            result = result.filter(m => m.evaluation_status === 'Under Evaluation');
         } else if (activeTab === 'nbl') {
-        result = result.filter(m => m.nbl_flag);
+            result = result.filter(m => m.nbl_flag);
         }
 
-        // Apply search
         if (searchQuery) {
         result = result.filter(mill => 
             mill.mill_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -852,7 +874,6 @@ const App = () => {
         );
         }
 
-        // Apply filters
         if (filters.region !== 'all') {
         result = result.filter(mill => mill.region === filters.region);
         }
@@ -866,7 +887,6 @@ const App = () => {
             result = result.filter(mill => mill.sourcing_status === filters.sourcingStatus);
         }
         
-        // Apply buyer filter
         if (filters.buyer !== 'all') {
         if (filters.buyer === 'gar-only') {
             result = result.filter(mill => mill.transactions.length > 0 && !mill.hasCompetitor);
@@ -875,23 +895,42 @@ const App = () => {
         } else if (filters.buyer === 'no-transactions') {
             result = result.filter(mill => mill.transactions.length === 0);
         } else {
-            // Specific buyer name
             result = result.filter(mill => 
             mill.transactions.some(t => t.buyer_entity === filters.buyer)
             );
         }
         }
         
-        // Apply product filter
         if (filters.product !== 'all') {
-        // Show all mills trading the selected product
         result = result.filter(mill => 
             mill.transactions.some(t => t.product_type === filters.product)
         );
         }
 
+        if (sortConfig) {
+            result.sort((a, b) => {
+                let aValue: number;
+                let bValue: number;
+                
+                if (sortConfig.key === 'distance') {
+                    const isFacilityDriven = activeScenario === 'facility-driven' && selectedFacility !== 'all';
+                    aValue = isFacilityDriven ? (a as any).distanceToSelectedFacility ?? Infinity : a.nearestFacilityDistance;
+                    bValue = isFacilityDriven ? (b as any).distanceToSelectedFacility ?? Infinity : b.nearestFacilityDistance;
+                } else {
+                    aValue = (a as any)[sortConfig.key] || 0;
+                    bValue = (b as any)[sortConfig.key] || 0;
+                }
+
+                if (sortConfig.direction === 'asc') {
+                    return aValue - bValue;
+                } else {
+                    return bValue - aValue;
+                }
+            });
+        }
+
         return result;
-    }, [enrichedMills, activeScenario, activeTab, searchQuery, filters, selectedFacility]);
+    }, [enrichedMills, activeScenario, activeTab, searchQuery, filters, selectedFacility, sortConfig]);
 
     const filteredStatistics = useMemo(() => {
         const totalCapacity = filteredMills.reduce((sum, m) => sum + (m.capacity_ton_per_hour || 0), 0);
@@ -900,7 +939,6 @@ const App = () => {
         return { totalCapacity, avgDistance };
     }, [filteredMills]);
 
-    // Scenario definitions
     const scenarios = [
         {
         id: 'facility-driven',
@@ -932,15 +970,12 @@ const App = () => {
         }
     ];
 
-    // Tab definitions
     const tabs = [
         { id: 'all', label: 'All Mills', count: statistics.total },
-        { id: 'eligible', label: 'Eligible', count: statistics.eligible },
         { id: 'under-evaluation', label: 'Under Evaluation', count: statistics.underEvaluation },
         { id: 'nbl', label: 'NBL', count: statistics.inNBL }
     ];
 
-    // Handle request evaluation
     const handleRequestEvaluation = (mill: Mill) => {
         const taskId = `ASN-2025-${Math.floor(Math.random() * 9000) + 1000}`;
         const updatedMills = mills.map(m => {
@@ -962,7 +997,6 @@ const App = () => {
         showToast(`Evaluation requested for ${mill.mill_name}. Task ${taskId} created.`, 'success');
     };
 
-    // Handle upload evaluation submission
     const handleUploadSubmit = () => {
         if (!uploadMill) return;
         const evalId = uploadMill.current_evaluation_id || `EVAL2025_${Math.floor(Math.random() * 9000) + 1000}`;
@@ -1024,7 +1058,6 @@ const App = () => {
         setUploadData({});
     };
 
-    // Reset demo data
     const handleResetDemo = () => {
         setMills(DEMO_MILLS);
         setActiveScenario('all');
@@ -1032,10 +1065,10 @@ const App = () => {
         setSearchQuery('');
         setSelectedFacility('all');
         setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all', sourcingStatus: 'all' });
+        handleClearKpiFilter();
         showToast('Demo data reset successfully!', 'success');
     };
 
-    // Badge color helper
     const getStatusBadgeColor = (status: EvaluationStatus | 'Not Eligible' | null) => {
         const colors: {[key: string]: string} = {
         'Eligible': 'bg-green-100 text-green-800 border-green-300',
@@ -1087,7 +1120,7 @@ const App = () => {
                     garBuyers,
                     competitorBuyers
                 };
-            }).sort((a,b) => b.totalCapacity - a.totalCapacity); // Sort by capacity desc
+            }).sort((a,b) => b.totalCapacity - a.totalCapacity);
         }, [mills]);
 
         if (regionalData.length === 0) {
@@ -1108,7 +1141,6 @@ const App = () => {
                             <h2 className="text-lg font-bold text-gray-900">{data.region}</h2>
                         </div>
                         <div className="grid grid-cols-3 gap-4 p-4">
-                            {/* Capacity and Totals */}
                             <div className="col-span-1 space-y-4">
                                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                     <p className="text-sm text-blue-800">Total Capacity</p>
@@ -1119,7 +1151,6 @@ const App = () => {
                                     <p className="text-3xl font-bold text-gray-900">{data.totalMills}</p>
                                 </div>
                             </div>
-                            {/* Status Breakdown */}
                             <div className="col-span-1 border-l border-r border-gray-200 px-4">
                                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Status Breakdown</h3>
                                 <div className="space-y-2">
@@ -1131,7 +1162,6 @@ const App = () => {
                                     ))}
                                 </div>
                             </div>
-                            {/* Buyer Distribution */}
                             <div className="col-span-1">
                                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Buyer Distribution</h3>
                                 <div className="space-y-3">
@@ -1473,7 +1503,6 @@ const App = () => {
                     <button 
                         onClick={() => {
                             if (isEditMode) {
-                                // If editing, pre-fill data and skip to review step
                                 const millToEdit = enrichedMills.find(m => m.mill_id === uploadMill.mill_id);
                                 if (millToEdit) {
                                     setUploadData({
@@ -1527,7 +1556,6 @@ const App = () => {
     if (view === 'dashboard') {
         return (
             <div className="min-h-screen bg-gray-50">
-      {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
           toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
@@ -1537,7 +1565,6 @@ const App = () => {
         </div>
       )}
 
-      {/* Buyer Hover Tooltip */}
       {hoveredMill && hoveredMill.buyerDetails && hoveredMill.buyerDetails.length > 0 && (
         <div 
           className="fixed z-50 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-4 min-w-[280px]"
@@ -1581,10 +1608,8 @@ const App = () => {
         </div>
       )}
 
-      {/* Upload Modal */}
       {uploadModalOpen && <UploadWizard />}
 
-      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-full mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
@@ -1635,7 +1660,6 @@ const App = () => {
       </div>
 
       <div className="max-w-full mx-auto px-6 py-4">
-        {/* Scenario Selector */}
         <div className="mb-4">
           <h2 className="text-sm font-semibold text-gray-900 mb-3">Select Workflow Scenario</h2>
           <div className="grid grid-cols-4 gap-3">
@@ -1648,7 +1672,6 @@ const App = () => {
                   onClick={() => {
                     const newScenario = isActive ? 'all' : scenario.id;
                     setActiveScenario(newScenario);
-                    // Reset facility selection when changing scenarios
                     if (newScenario !== 'facility-driven') {
                       setSelectedFacility('all');
                     }
@@ -1677,7 +1700,6 @@ const App = () => {
             </div>
           )}
           
-          {/* Facility Filter for Facility-Driven Scenario */}
           {activeScenario === 'facility-driven' && (
             <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
               <label className="block text-sm font-medium text-blue-900 mb-2">
@@ -1704,11 +1726,11 @@ const App = () => {
           )}
         </div>
 
-        {/* New KPI Summary Bar */}
         <div className="grid grid-cols-5 gap-3 mb-4">
             <button
-                onClick={() => { setActiveTab('eligible'); setFilters(f => ({...f, risk: 'all', sourcingStatus: 'all'})); }}
-                className="bg-white rounded-lg shadow-sm border p-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => handleKpiClick('eligible')}
+                title="Click to show only eligible mills"
+                className={`bg-white rounded-lg shadow-sm border p-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeKpiFilter && activeKpiFilter !== 'eligible' ? 'opacity-60 hover:opacity-100' : ''} ${activeKpiFilter === 'eligible' ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2' : 'hover:border-gray-400'}`}
             >
                 <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-gray-600">Eligible Mills</p>
@@ -1717,8 +1739,9 @@ const App = () => {
                 <p className="text-2xl font-bold text-gray-900">{statistics.eligible}</p>
             </button>
             <button
-                onClick={() => { setActiveTab('all'); setFilters(f => ({...f, sourcingStatus: 'Delivering', risk: 'all'})); }}
-                className="bg-white rounded-lg shadow-sm border p-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => handleKpiClick('delivering')}
+                title="Click to show only 'Delivering' status mills"
+                className={`bg-white rounded-lg shadow-sm border p-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeKpiFilter && activeKpiFilter !== 'delivering' ? 'opacity-60 hover:opacity-100' : ''} ${activeKpiFilter === 'delivering' ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2' : 'hover:border-gray-400'}`}
             >
                 <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-gray-600">Delivering</p>
@@ -1731,7 +1754,11 @@ const App = () => {
                     </span>
                 </p>
             </button>
-            <div className="bg-white rounded-lg shadow-sm border p-3">
+            <button
+                onClick={() => handleKpiClick('capacity')}
+                title="Click to sort by mill capacity (descending)"
+                className={`bg-white rounded-lg shadow-sm border p-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeKpiFilter && activeKpiFilter !== 'capacity' ? 'opacity-60 hover:opacity-100' : ''} ${activeKpiFilter === 'capacity' ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2' : 'hover:border-gray-400'}`}
+            >
                 <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-gray-600">Filtered Capacity</p>
                     <Scale className="w-4 h-4 text-gray-500" />
@@ -1740,8 +1767,12 @@ const App = () => {
                     {filteredStatistics.totalCapacity.toLocaleString()}
                     <span className="text-base font-medium text-gray-500"> T/H</span>
                 </p>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm border p-3">
+            </button>
+            <button
+                onClick={() => handleKpiClick('distance')}
+                title="Click to sort by distance (ascending)"
+                className={`bg-white rounded-lg shadow-sm border p-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeKpiFilter && activeKpiFilter !== 'distance' ? 'opacity-60 hover:opacity-100' : ''} ${activeKpiFilter === 'distance' ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2' : 'hover:border-gray-400'}`}
+            >
                 <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-gray-600">Avg. Distance</p>
                     <Navigation className="w-4 h-4 text-gray-500" />
@@ -1750,10 +1781,11 @@ const App = () => {
                     {filteredStatistics.avgDistance.toFixed(1)}
                     <span className="text-base font-medium text-gray-500"> km</span>
                 </p>
-            </div>
+            </button>
             <button
-                onClick={() => { setActiveTab('all'); setFilters(f => ({...f, risk: 'High', sourcingStatus: 'all'})); }}
-                className="bg-white rounded-lg shadow-sm border p-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => handleKpiClick('at-risk')}
+                title="Click to show only high-risk mills"
+                className={`bg-white rounded-lg shadow-sm border p-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeKpiFilter && activeKpiFilter !== 'at-risk' ? 'opacity-60 hover:opacity-100' : ''} ${activeKpiFilter === 'at-risk' ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2' : 'hover:border-gray-400'}`}
             >
                 <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-gray-600">At-Risk Mills</p>
@@ -1763,7 +1795,6 @@ const App = () => {
             </button>
         </div>
 
-        {/* Tabs */}
         <div className="mb-4">
           <div className="border-b border-gray-200">
             <div className="flex space-x-1">
@@ -1789,7 +1820,6 @@ const App = () => {
           </div>
         </div>
 
-        {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm border mb-4">
           <div className="p-3">
             <div className="flex items-center space-x-3">
@@ -1853,7 +1883,6 @@ const App = () => {
               </select>
             </div>
             
-            {/* Filter Helper Text */}
             {(filters.product === 'CPO' || filters.product === 'PK') && (
               <div className="mt-2 flex items-start space-x-1">
                 <div className="flex-shrink-0 mt-0.5">
@@ -1867,10 +1896,21 @@ const App = () => {
               </div>
             )}
             
-            {/* Active Filters Display */}
-            {(filters.buyer !== 'all' || filters.product !== 'all' || filters.region !== 'all' || filters.risk !== 'all' || filters.sourcingStatus !== 'all') && (
+            {(activeKpiFilter || filters.buyer !== 'all' || filters.product !== 'all' || filters.region !== 'all' || filters.risk !== 'all' || filters.sourcingStatus !== 'all') && (
               <div className="mt-3 flex items-center flex-wrap gap-2">
                 <span className="text-xs text-gray-600">Active filters:</span>
+                {activeKpiFilter && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800 border border-indigo-300">
+                    KPI: {activeKpiFilter.charAt(0).toUpperCase() + activeKpiFilter.slice(1)}
+                    <button 
+                      onClick={handleClearKpiFilter}
+                      className="ml-1 hover:text-indigo-900"
+                      title="Clear KPI filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
                 {filters.buyer !== 'all' && (
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-300">
                     Buyer: {filters.buyer === 'gar-only' ? '🟢 GAR Only' : filters.buyer === 'has-competitor' ? '🔴 Has Competitor' : filters.buyer === 'no-transactions' ? 'No Transactions' : filters.buyer}
@@ -1904,7 +1944,7 @@ const App = () => {
                     </button>
                   </span>
                 )}
-                {filters.risk !== 'all' && (
+                {filters.risk !== 'all' && !activeKpiFilter && (
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800 border border-orange-300">
                     Risk: {filters.risk}
                     <button 
@@ -1915,7 +1955,7 @@ const App = () => {
                     </button>
                   </span>
                 )}
-                 {filters.sourcingStatus !== 'all' && (
+                 {filters.sourcingStatus !== 'all' && !activeKpiFilter && (
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-cyan-100 text-cyan-800 border border-cyan-300">
                     Sourcing Status: {filters.sourcingStatus}
                     <button 
@@ -1927,7 +1967,10 @@ const App = () => {
                   </span>
                 )}
                 <button
-                  onClick={() => setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all', sourcingStatus: 'all' })}
+                  onClick={() => {
+                    setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all', sourcingStatus: 'all' });
+                    handleClearKpiFilter();
+                  }}
                   className="text-xs text-gray-600 hover:text-gray-900 underline"
                 >
                   Clear all
@@ -1937,7 +1980,6 @@ const App = () => {
           </div>
         </div>
 
-        {/* Mills Table or Regional Summary */}
         {activeScenario === 'regional-supply' ? (
           <RegionalSummaryView mills={filteredMills} />
         ) : (
@@ -2026,7 +2068,6 @@ const App = () => {
                         <button
                             onClick={() => {
                             setSelectedMill(mill);
-                            // Route to appropriate view based on evaluation status
                             if (mill.evaluation_status === 'Under Evaluation') {
                                 setView('asana-workflow');
                             } else if (mill.current_evaluation_id) {
@@ -2046,9 +2087,8 @@ const App = () => {
                                         const millToModify = enrichedMills.find(m => m.mill_id === mill.mill_id);
                                         if (millToModify) {
                                             setUploadMill(millToModify);
-                                            setUploadStep(1); // Start from step 1
+                                            setUploadStep(1);
                                             if (millToModify.current_evaluation_id) {
-                                                // Pre-fill for editing
                                                 setUploadData({
                                                     recommendation: millToModify.recommendation,
                                                     risk_level: millToModify.risk_level,
@@ -2135,9 +2175,7 @@ const App = () => {
     
             <div className="max-w-full mx-auto px-6 py-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column */}
                 <div className="lg:col-span-2 space-y-4">
-                  {/* Mill Information */}
                   <div className="bg-white rounded-lg shadow-sm border p-4">
                     <h2 className="text-base font-semibold text-gray-900 mb-3">Mill Information</h2>
                     <div className="grid grid-cols-2 gap-4">
@@ -2168,7 +2206,6 @@ const App = () => {
                     </div>
                   </div>
     
-                  {/* Evaluation Summary (Accordion) */}
                   {selectedMill.current_evaluation_id && (
                     <div className="bg-white rounded-lg shadow-sm border">
                       <button
@@ -2203,7 +2240,6 @@ const App = () => {
                             </div>
                           </div>
     
-                          {/* FFB Source Distribution */}
                           <div className="mt-4 pt-4 border-t border-gray-200">
                             <h3 className="text-sm font-medium text-gray-900 mb-3">FFB Source Distribution</h3>
                             <div className="space-y-2">
@@ -2237,7 +2273,6 @@ const App = () => {
                             </div>
                           </div>
     
-                          {/* Alerts */}
                           <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-2 gap-4">
                             <div>
                               <p className="text-sm text-gray-600">Deforestation Alerts</p>
@@ -2257,7 +2292,6 @@ const App = () => {
                     </div>
                   )}
     
-                  {/* Trading Activity - Simple One-Liner */}
                   {selectedMill.transactions && selectedMill.transactions.length > 0 && (
                     <div className="bg-white rounded-lg shadow-sm border p-4">
                       <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center">
@@ -2294,9 +2328,7 @@ const App = () => {
                   )}
                 </div>
     
-                {/* Right Column */}
                 <div className="space-y-4">
-                  {/* NBL Warning */}
                   {selectedMill.nbl_flag && (
                     <div className="bg-red-50 border-2 border-red-300 rounded-lg shadow-sm p-4">
                       <div className="flex items-center mb-2">
@@ -2319,7 +2351,6 @@ const App = () => {
                     </div>
                   )}
     
-                  {/* Evaluation Status */}
                   {selectedMill.current_asana_task_url && (
                     <div className="bg-white rounded-lg shadow-sm border p-4">
                       <h2 className="text-base font-semibold text-gray-900 mb-3">Evaluation Status</h2>
@@ -2357,7 +2388,6 @@ const App = () => {
                     </div>
                   )}
     
-                  {/* Actions */}
                   <div className="bg-white rounded-lg shadow-sm border p-4">
                     <h2 className="text-base font-semibold text-gray-900 mb-3">Actions</h2>
                     <div className="space-y-2">
@@ -2393,7 +2423,6 @@ const App = () => {
                     </div>
                   </div>
     
-                  {/* Quick Stats */}
                   <div className="bg-white rounded-lg shadow-sm border p-4">
                     <h2 className="text-base font-semibold text-gray-900 mb-3">Quick Stats</h2>
                     <div className="space-y-2 text-sm">
@@ -2463,7 +2492,6 @@ const App = () => {
               </div>
       
               <div className="max-w-full mx-auto px-6 py-6">
-                {/* Evaluation Header */}
                 <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -2504,9 +2532,7 @@ const App = () => {
                 </div>
       
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Main Content */}
                   <div className="lg:col-span-2 space-y-6">
-                    {/* Recommendation */}
                     <div className="bg-white rounded-lg shadow-sm border p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommendation</h3>
                       <div className="space-y-4">
@@ -2529,7 +2555,6 @@ const App = () => {
                       </div>
                     </div>
       
-                    {/* Traceability & FFB Sourcing */}
                     <div className="bg-white rounded-lg shadow-sm border p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Traceability & FFB Sourcing</h3>
                       
@@ -2591,7 +2616,6 @@ const App = () => {
                       </div>
                     </div>
       
-                    {/* Environmental & Compliance */}
                     <div className="bg-white rounded-lg shadow-sm border p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Environmental & Compliance</h3>
                       
@@ -2664,9 +2688,7 @@ const App = () => {
                     </div>
                   </div>
       
-                  {/* Sidebar */}
                   <div className="space-y-6">
-                    {/* Approval Info */}
                     <div className="bg-white rounded-lg shadow-sm border p-4">
                       <h3 className="text-base font-semibold text-gray-900 mb-3">Approval Information</h3>
                       <div className="space-y-3">
@@ -2685,7 +2707,6 @@ const App = () => {
                       </div>
                     </div>
       
-                    {/* Mill Information */}
                     <div className="bg-white rounded-lg shadow-sm border p-4">
                       <h3 className="text-base font-semibold text-gray-900 mb-3">Mill Information</h3>
                       <div className="space-y-2 text-sm">
@@ -2712,7 +2733,6 @@ const App = () => {
                       </div>
                     </div>
       
-                    {/* Documents */}
                     <div className="bg-white rounded-lg shadow-sm border p-4">
                       <h3 className="text-base font-semibold text-gray-900 mb-3">Documents</h3>
                       <div className="space-y-2">
@@ -2747,7 +2767,6 @@ const App = () => {
                       </div>
                     </div>
       
-                    {/* Actions */}
                     <div className="bg-white rounded-lg shadow-sm border p-4">
                       <h3 className="text-base font-semibold text-gray-900 mb-3">Actions</h3>
                       <div className="space-y-2">
@@ -2801,7 +2820,6 @@ const App = () => {
             </div>
     
             <div className="max-w-full mx-auto px-6 py-6">
-              {/* Status Banner */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -2826,7 +2844,6 @@ const App = () => {
                 </div>
               </div>
     
-              {/* Workflow Steps */}
               <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Asana Workflow Progress</h2>
                 
@@ -2839,20 +2856,17 @@ const App = () => {
     
                     return (
                       <div key={step.step} className="relative">
-                        {/* Connector Line */}
                         {idx < ASANA_WORKFLOW_STEPS.length - 1 && (
                           <div className="absolute left-6 top-12 w-0.5 h-8 bg-gray-200">
                             {isCompleted && <div className="w-full bg-green-500 h-full"></div>}
                           </div>
                         )}
     
-                        {/* Step Card */}
                         <div className={`flex items-start space-x-4 p-4 rounded-lg border-2 transition-all ${
                           isCurrent ? 'border-blue-500 bg-blue-50' :
                           isCompleted ? 'border-green-500 bg-green-50' :
                           'border-gray-200 bg-white'
                         }`}>
-                          {/* Icon Circle */}
                           <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center border-2 ${
                             isCompleted ? 'bg-green-500 border-green-500' :
                             isCurrent ? 'bg-blue-500 border-blue-500' :
@@ -2865,7 +2879,6 @@ const App = () => {
                             )}
                           </div>
     
-                          {/* Step Info */}
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <h3 className={`font-semibold ${
@@ -2902,7 +2915,6 @@ const App = () => {
                 </div>
               </div>
     
-              {/* Task Details */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border p-4">
                   <h2 className="text-base font-semibold text-gray-900 mb-3">Task Details</h2>
@@ -2974,7 +2986,6 @@ const App = () => {
                     </div>
                   </div>
     
-                  {/* Upload Button for Sustainability Team */}
                   {userRole === 'Sustainability Team' ? (
                     <button
                       onClick={() => {
@@ -3045,7 +3056,6 @@ const App = () => {
                       </select>
                       <p className="text-xs text-gray-500 mt-1">For demo purposes only</p>
                       
-                      {/* Role indicator */}
                       <div className={`mt-3 p-3 rounded-lg ${
                         userRole === 'Sustainability Team' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'
                       }`}>
@@ -3092,7 +3102,6 @@ const App = () => {
           );
     }
 
-    // Fallback or loading state
     return <div>Loading...</div>;
 }
 
