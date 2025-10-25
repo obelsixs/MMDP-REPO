@@ -33,19 +33,10 @@ interface AsanaWorkflowStep {
     color: string;
 }
 
-interface EvaluationHistoryItem {
-    evaluation_id: string;
-    mill_id: string;
-    mill_name: string;
-    evaluation_date: string;
-    valid_until: string;
-    risk_level: 'Low' | 'High';
-    recommendation: 'Yes' | 'No';
-    eligibility_status: 'Eligible' | 'Not Eligible';
-}
-
-type EvaluationStatus = 'Eligible' | 'Not Eligible (NBL)' | 'Under Evaluation' | 'Expired' | 'Expiring Soon' | 'Not Evaluated';
+type EvaluationStatus = 'Eligible' | 'Not Eligible (NBL)' | 'Under Evaluation' | 'Not Evaluated';
 type RiskLevel = 'Low' | 'Medium' | 'High' | null;
+type SourcingStatus = 'Delivering' | 'Progressing' | 'Commitment & Starting Action' | 'Awareness' | 'Known' | 'Unknown';
+
 
 interface Mill {
     mill_id: string;
@@ -59,10 +50,10 @@ interface Mill {
     longitude: number;
     evaluation_status: EvaluationStatus;
     current_evaluation_id: string | null;
-    last_eval_date: string | null;
-    valid_until: string | null;
-    status_validity?: string;
+    last_updated: string | null;
     risk_level: RiskLevel;
+    sourcing_status: SourcingStatus;
+    sourcing_status_last_updated?: string;
     nbl_flag: boolean;
     nbl_reason?: string;
     nbl_date_added?: string;
@@ -100,8 +91,6 @@ interface Mill {
 }
 
 interface EnrichedMill extends Mill {
-    daysUntilExpiry: number | null;
-    validityStatus: 'Expired' | 'Expiring Soon' | 'Valid' | null;
     transactions: Transaction[];
     buyerSummary: string;
     productSummary: string;
@@ -129,7 +118,7 @@ interface Filters {
 interface UploadData {
     recommendation?: 'Yes' | 'No';
     risk_level?: RiskLevel;
-    valid_until?: string;
+    sourcing_status?: SourcingStatus;
     traceability_level?: string;
     ndpe_violation_found?: boolean;
     public_grievance_flag?: boolean;
@@ -158,9 +147,7 @@ const DEMO_MILLS: Mill[] = [
     longitude: 103.6131,
     evaluation_status: "Eligible",
     current_evaluation_id: "EVAL2024_001",
-    last_eval_date: "2024-06-15",
-    valid_until: "2027-06-15",
-    status_validity: "Valid",
+    last_updated: "2024-06-15",
     risk_level: "Low",
     nbl_flag: false,
     distance_to_nearest: 12.4,
@@ -168,6 +155,8 @@ const DEMO_MILLS: Mill[] = [
     scenario_tags: ["facility-driven"],
     recommendation: "Yes",
     traceability_level: "100% traceable to mill",
+    sourcing_status: "Progressing",
+    sourcing_status_last_updated: "2024-05-10",
     ffb_source_own_pct: 60,
     ffb_source_plasma_pct: 30,
     ffb_source_independent_pct: 10,
@@ -198,9 +187,7 @@ const DEMO_MILLS: Mill[] = [
     longitude: 117.1536,
     evaluation_status: "Eligible",
     current_evaluation_id: "EVAL2024_003",
-    last_eval_date: "2024-09-10",
-    valid_until: "2026-03-20",
-    status_validity: "Valid",
+    last_updated: "2024-09-10",
     risk_level: "Low",
     nbl_flag: false,
     distance_to_nearest: 45.2,
@@ -208,6 +195,8 @@ const DEMO_MILLS: Mill[] = [
     scenario_tags: ["facility-driven", "renewal"],
     recommendation: "Yes",
     traceability_level: "100% traceable to plantation",
+    sourcing_status: "Delivering",
+    sourcing_status_last_updated: "2024-09-01",
     ffb_source_own_pct: 85,
     ffb_source_plasma_pct: 15,
     ffb_source_independent_pct: 0,
@@ -238,9 +227,7 @@ const DEMO_MILLS: Mill[] = [
     longitude: 103.3838,
     evaluation_status: "Eligible",
     current_evaluation_id: "EVAL2024_005",
-    last_eval_date: "2024-07-30",
-    valid_until: "2026-08-15",
-    status_validity: "Valid",
+    last_updated: "2024-07-30",
     risk_level: "Low",
     nbl_flag: false,
     distance_to_nearest: 28.7,
@@ -248,6 +235,8 @@ const DEMO_MILLS: Mill[] = [
     scenario_tags: ["facility-driven"],
     recommendation: "Yes",
     traceability_level: "95% traceable to plantation",
+    sourcing_status: "Commitment & Starting Action",
+    sourcing_status_last_updated: "2024-07-20",
     ffb_source_own_pct: 55,
     ffb_source_plasma_pct: 35,
     ffb_source_independent_pct: 10,
@@ -280,9 +269,7 @@ const DEMO_MILLS: Mill[] = [
     longitude: 101.7068,
     evaluation_status: "Not Eligible (NBL)",
     current_evaluation_id: "EVAL2024_002",
-    last_eval_date: "2024-11-20",
-    valid_until: "2024-12-15",
-    status_validity: "Expired",
+    last_updated: "2024-11-20",
     risk_level: "High",
     nbl_flag: true,
     nbl_reason: "NDPE Violation - Deforestation",
@@ -292,6 +279,8 @@ const DEMO_MILLS: Mill[] = [
     scenario_tags: ["competitor-check"],
     recommendation: "No",
     traceability_level: "Limited traceability - 60% to plantation",
+    sourcing_status: "Known",
+    sourcing_status_last_updated: "2024-01-15",
     ffb_source_own_pct: 40,
     ffb_source_plasma_pct: 20,
     ffb_source_independent_pct: 40,
@@ -323,8 +312,7 @@ const DEMO_MILLS: Mill[] = [
     longitude: 101.4479,
     evaluation_status: "Not Eligible (NBL)",
     current_evaluation_id: "EVAL2024_006",
-    last_eval_date: "2024-10-15",
-    valid_until: "2024-11-30",
+    last_updated: "2024-10-15",
     risk_level: "High",
     nbl_flag: true,
     nbl_reason: "NDPE Violation - Peat Development",
@@ -334,6 +322,8 @@ const DEMO_MILLS: Mill[] = [
     scenario_tags: ["competitor-check"],
     recommendation: "No",
     traceability_level: "Low",
+    sourcing_status: "Known",
+    sourcing_status_last_updated: "2023-12-01",
     ffb_source_own_pct: 50,
     ffb_source_plasma_pct: 30,
     ffb_source_independent_pct: 20,
@@ -346,7 +336,7 @@ const DEMO_MILLS: Mill[] = [
     competitor_flag: true
   },
 
-  // 🟨 EXPIRED / EXPIRING SOON (2)
+  // 🟨 Previously EXPIRED / EXPIRING SOON, now just ELIGIBLE with old update dates (2)
   {
     mill_id: "PO1000009",
     mill_name: "Expired Mill Alpha",
@@ -357,10 +347,9 @@ const DEMO_MILLS: Mill[] = [
     island: "Sumatra",
     latitude: -2.3307,
     longitude: 99.8453,
-    evaluation_status: "Expired",
+    evaluation_status: "Eligible",
     current_evaluation_id: "EVAL2023_009",
-    last_eval_date: "2023-08-15",
-    valid_until: "2024-08-15",
+    last_updated: "2023-08-15",
     risk_level: "Low",
     nbl_flag: false,
     distance_to_nearest: 189.4,
@@ -368,6 +357,8 @@ const DEMO_MILLS: Mill[] = [
     scenario_tags: ["renewal"],
     recommendation: "Yes",
     traceability_level: "High",
+    sourcing_status: "Awareness",
+    sourcing_status_last_updated: "2023-08-10",
     ffb_source_own_pct: 45,
     ffb_source_plasma_pct: 40,
     ffb_source_independent_pct: 15,
@@ -388,10 +379,9 @@ const DEMO_MILLS: Mill[] = [
     island: "Sumatra",
     latitude: -1.5200,
     longitude: 103.4500,
-    evaluation_status: "Expiring Soon",
+    evaluation_status: "Eligible",
     current_evaluation_id: "EVAL2024_010",
-    last_eval_date: "2024-11-20",
-    valid_until: "2025-11-20",
+    last_updated: "2024-11-20",
     risk_level: "Low",
     nbl_flag: false,
     distance_to_nearest: 15.3,
@@ -399,6 +389,8 @@ const DEMO_MILLS: Mill[] = [
     scenario_tags: ["renewal"],
     recommendation: "Yes",
     traceability_level: "High",
+    sourcing_status: "Progressing",
+    sourcing_status_last_updated: "2024-11-15",
     ffb_source_own_pct: 50,
     ffb_source_plasma_pct: 35,
     ffb_source_independent_pct: 15,
@@ -423,13 +415,14 @@ const DEMO_MILLS: Mill[] = [
     longitude: 100.4172,
     evaluation_status: "Under Evaluation",
     current_evaluation_id: null,
-    last_eval_date: null,
-    valid_until: null,
+    last_updated: null,
     risk_level: null,
     nbl_flag: false,
     distance_to_nearest: 156.3,
     nearest_facility: "GAR Jambi Refinery",
     scenario_tags: ["new-supplier"],
+    sourcing_status: "Awareness",
+    sourcing_status_last_updated: "2024-10-01",
     current_asana_task_url: "https://app.asana.com/0/123/004-progress",
     asana_task_id: "ASN-2024-004",
     asana_assigned_to: "Crescentiana P.S.",
@@ -452,13 +445,14 @@ const DEMO_MILLS: Mill[] = [
     longitude: 116.8529,
     evaluation_status: "Under Evaluation",
     current_evaluation_id: null,
-    last_eval_date: null,
-    valid_until: null,
+    last_updated: null,
     risk_level: null,
     nbl_flag: false,
     distance_to_nearest: 78.5,
     nearest_facility: "GAR Kalimantan Hub",
     scenario_tags: ["new-supplier"],
+    sourcing_status: "Known",
+    sourcing_status_last_updated: "2024-09-28",
     current_asana_task_url: "https://app.asana.com/0/123/011-progress",
     asana_task_id: "ASN-2024-011",
     asana_assigned_to: "Ayuk Yuliastuti",
@@ -483,13 +477,13 @@ const DEMO_MILLS: Mill[] = [
     longitude: 101.5000,
     evaluation_status: "Not Evaluated",
     current_evaluation_id: null,
-    last_eval_date: null,
-    valid_until: null,
+    last_updated: null,
     risk_level: null,
     nbl_flag: false,
     distance_to_nearest: 45.7,
     nearest_facility: "GAR Riau Processing",
-    scenario_tags: ["new-supplier"]
+    scenario_tags: ["new-supplier"],
+    sourcing_status: "Unknown",
   },
   {
     mill_id: "PO1000013",
@@ -503,13 +497,13 @@ const DEMO_MILLS: Mill[] = [
     longitude: 103.7000,
     evaluation_status: "Not Evaluated",
     current_evaluation_id: null,
-    last_eval_date: null,
-    valid_until: null,
+    last_updated: null,
     risk_level: null,
     nbl_flag: false,
     distance_to_nearest: 22.1,
     nearest_facility: "GAR Jambi Refinery",
-    scenario_tags: ["new-supplier"]
+    scenario_tags: ["new-supplier"],
+    sourcing_status: "Unknown",
   },
   {
     mill_id: "PO1000014",
@@ -523,15 +517,16 @@ const DEMO_MILLS: Mill[] = [
     longitude: 99.5000,
     evaluation_status: "Not Evaluated",
     current_evaluation_id: null,
-    last_eval_date: null,
-    valid_until: null,
+    last_updated: null,
     risk_level: null,
     nbl_flag: false,
     distance_to_nearest: 134.2,
     nearest_facility: "GAR Riau Processing",
     scenario_tags: ["competitor-check"],
     competitor_flag: true,
-    competitor_buyer: "Wilmar International"
+    competitor_buyer: "Wilmar International",
+    sourcing_status: "Known",
+    sourcing_status_last_updated: "2024-03-03",
   }
 ];
 
@@ -662,34 +657,10 @@ const ASANA_WORKFLOW_STEPS: AsanaWorkflowStep[] = [
   { step: 11, name: "Final Recommendation by SSP Head", icon: Star, color: "green" }
 ];
 
-const EVALUATION_HISTORY: EvaluationHistoryItem[] = [
-  {
-    evaluation_id: "EVAL2024_001",
-    mill_id: "PO1000001",
-    mill_name: "Forest Green Palm Mill",
-    evaluation_date: "2024-06-15",
-    valid_until: "2027-06-15",
-    risk_level: "Low",
-    recommendation: "Yes",
-    eligibility_status: "Eligible"
-  },
-  {
-    evaluation_id: "EVAL2024_003",
-    mill_id: "PO1000003",
-    mill_name: "Kalimantan Sustainable Mills",
-    evaluation_date: "2024-09-10",
-    valid_until: "2026-03-20",
-    risk_level: "Low",
-    recommendation: "Yes",
-    eligibility_status: "Eligible"
-  }
-];
-
 const App = () => {
     const [view, setView] = useState('dashboard');
     const [selectedMill, setSelectedMill] = useState<EnrichedMill | null>(null);
     const [mills, setMills] = useState<Mill[]>(DEMO_MILLS);
-    const [evaluationHistory, setEvaluationHistory] = useState<EvaluationHistoryItem[]>(EVALUATION_HISTORY);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeScenario, setActiveScenario] = useState('all');
     const [activeTab, setActiveTab] = useState('all');
@@ -738,28 +709,9 @@ const App = () => {
         setHoveredMill(null);
     };
 
-    // Calculate days until expiry
-    const getDaysUntilExpiry = (validUntil: string | null) => {
-        if (!validUntil) return null;
-        const today = new Date();
-        const expiryDate = new Date(validUntil);
-        const diffTime = expiryDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
-
     // Enhanced mills with computed properties
     const enrichedMills: EnrichedMill[] = useMemo(() => {
         return mills.map(mill => {
-        const daysUntilExpiry = getDaysUntilExpiry(mill.valid_until);
-        let validityStatus: 'Expired' | 'Expiring Soon' | 'Valid' | null = null;
-        
-        if (daysUntilExpiry !== null) {
-            if (daysUntilExpiry < 0) validityStatus = 'Expired';
-            else if (daysUntilExpiry <= 30) validityStatus = 'Expiring Soon';
-            else validityStatus = 'Valid';
-        }
-        
         const transactions = DEMO_TRANSACTIONS.filter(t => t.mill_id === mill.mill_id);
         
         // Compute buyer summary
@@ -802,8 +754,6 @@ const App = () => {
         
         return {
             ...mill,
-            daysUntilExpiry,
-            validityStatus,
             transactions,
             buyerSummary: buyerSummary || '-',
             productSummary: productSummary || '-',
@@ -821,13 +771,11 @@ const App = () => {
         const total = enrichedMills.length;
         const eligible = enrichedMills.filter(m => m.evaluation_status === 'Eligible').length;
         const underEvaluation = enrichedMills.filter(m => m.evaluation_status === 'Under Evaluation').length;
-        const expiringSoon = enrichedMills.filter(m => m.validityStatus === 'Expiring Soon').length;
-        const expired = enrichedMills.filter(m => m.validityStatus === 'Expired').length;
         const inNBL = enrichedMills.filter(m => m.nbl_flag).length;
         const notEvaluated = enrichedMills.filter(m => m.evaluation_status === 'Not Evaluated').length;
         const avgDistance = enrichedMills.reduce((sum, m) => sum + (m.distance_to_nearest || 0), 0) / total;
         
-        return { total, eligible, underEvaluation, expiringSoon, expired, inNBL, notEvaluated, avgDistance };
+        return { total, eligible, underEvaluation, inNBL, notEvaluated, avgDistance };
     }, [enrichedMills]);
 
     // Filtered mills based on scenario, tab, and filters
@@ -862,8 +810,6 @@ const App = () => {
         result = result.filter(m => m.evaluation_status === 'Eligible');
         } else if (activeTab === 'under-evaluation') {
         result = result.filter(m => m.evaluation_status === 'Under Evaluation');
-        } else if (activeTab === 'expired') {
-        result = result.filter(m => m.validityStatus === 'Expired' || m.validityStatus === 'Expiring Soon');
         } else if (activeTab === 'nbl') {
         result = result.filter(m => m.nbl_flag);
         }
@@ -941,7 +887,7 @@ const App = () => {
         id: 'renewal',
         icon: RotateCcw,
         title: 'Contract Renewal',
-        description: 'Expired or expiring evaluations requiring renewal',
+        description: 'Mills with older evaluations requiring review',
         color: 'orange'
         }
     ];
@@ -951,7 +897,6 @@ const App = () => {
         { id: 'all', label: 'All Mills', count: statistics.total },
         { id: 'eligible', label: 'Eligible', count: statistics.eligible },
         { id: 'under-evaluation', label: 'Under Evaluation', count: statistics.underEvaluation },
-        { id: 'expired', label: 'Expired', count: statistics.expired + statistics.expiringSoon },
         { id: 'nbl', label: 'NBL', count: statistics.inNBL }
     ];
 
@@ -980,7 +925,7 @@ const App = () => {
     // Handle upload evaluation submission
     const handleUploadSubmit = () => {
         if (!uploadMill) return;
-        const evalId = `EVAL2025_${Math.floor(Math.random() * 9000) + 1000}`;
+        const evalId = uploadMill.current_evaluation_id || `EVAL2025_${Math.floor(Math.random() * 9000) + 1000}`;
         const today = new Date().toISOString().split('T')[0];
         
         const updatedMills = mills.map(m => {
@@ -991,9 +936,10 @@ const App = () => {
                     ...m,
                     evaluation_status: newStatus,
                     current_evaluation_id: evalId,
-                    last_eval_date: today,
-                    valid_until: uploadData.valid_until || null,
+                    last_updated: today,
                     risk_level: uploadData.risk_level || null,
+                    sourcing_status: uploadData.sourcing_status || m.sourcing_status,
+                    sourcing_status_last_updated: m.sourcing_status !== uploadData.sourcing_status ? today : m.sourcing_status_last_updated,
                     recommendation: uploadData.recommendation,
                     traceability_level: uploadData.traceability_level,
                     ffb_source_own_pct: uploadData.ffb_source_own_pct,
@@ -1020,26 +966,13 @@ const App = () => {
         
         setMills(updatedMills);
         
-        const newHistoryEntry: EvaluationHistoryItem = {
-            evaluation_id: evalId,
-            mill_id: uploadMill.mill_id,
-            mill_name: uploadMill.mill_name,
-            evaluation_date: today,
-            valid_until: uploadData.valid_until || '',
-            risk_level: uploadData.risk_level === 'High' ? 'High' : 'Low',
-            recommendation: uploadData.recommendation || 'No',
-            eligibility_status: uploadData.recommendation === 'Yes' ? 'Eligible' : 'Not Eligible'
-        };
-        
-        setEvaluationHistory([newHistoryEntry, ...evaluationHistory]);
-        
         setUploadModalOpen(false);
         setUploadStep(1);
         
         const finalUpdatedMill = updatedMills.find(m => m.mill_id === uploadMill.mill_id);
         const enrichedFinalMill = enrichedMills.find(m => m.mill_id === finalUpdatedMill?.mill_id);
         
-        showToast(`Evaluation uploaded successfully for ${uploadMill.mill_name}!`, 'success');
+        showToast(`Evaluation updated successfully for ${uploadMill.mill_name}!`, 'success');
         
         if (enrichedFinalMill) {
              setSelectedMill(enrichedFinalMill);
@@ -1053,7 +986,6 @@ const App = () => {
     // Reset demo data
     const handleResetDemo = () => {
         setMills(DEMO_MILLS);
-        setEvaluationHistory(EVALUATION_HISTORY);
         setActiveScenario('all');
         setActiveTab('all');
         setSearchQuery('');
@@ -1063,28 +995,39 @@ const App = () => {
     };
 
     // Badge color helper
-    const getStatusBadgeColor = (status: EvaluationStatus | 'Valid' | 'Expired' | 'Expiring Soon' | 'Not Eligible' | null) => {
+    const getStatusBadgeColor = (status: EvaluationStatus | 'Not Eligible' | null) => {
         const colors: {[key: string]: string} = {
         'Eligible': 'bg-green-100 text-green-800 border-green-300',
         'Under Evaluation': 'bg-orange-100 text-orange-800 border-orange-300',
-        'Expired': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-        'Expiring Soon': 'bg-yellow-100 text-yellow-800 border-yellow-300',
         'Not Eligible': 'bg-red-100 text-red-800 border-red-300',
         'Not Eligible (NBL)': 'bg-red-100 text-red-800 border-red-400',
         'Not Evaluated': 'bg-gray-100 text-gray-800 border-gray-300',
-        'Valid': 'bg-green-100 text-green-800 border-green-300',
         };
         return colors[status || ''] || 'bg-gray-100 text-gray-800 border-gray-300';
     };
 
+    const getSourcingStatusBadgeColor = (status: SourcingStatus) => {
+        const colors: { [key in SourcingStatus]: string } = {
+            'Delivering': 'bg-green-100 text-green-800 border-green-300',
+            'Progressing': 'bg-blue-100 text-blue-800 border-blue-300',
+            'Commitment & Starting Action': 'bg-sky-100 text-sky-800 border-sky-300',
+            'Awareness': 'bg-purple-100 text-purple-800 border-purple-300',
+            'Known': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+            'Unknown': 'bg-gray-100 text-gray-800 border-gray-300',
+        };
+        return colors[status] || 'bg-gray-100 text-gray-800 border-gray-300';
+    };
+
+
     const UploadWizard = () => {
+        const isEditMode = !!uploadMill?.current_evaluation_id;
+
         const simulateParsing = () => {
             setIsUploading(true);
             setTimeout(() => {
                 setUploadData({
                 recommendation: 'Yes',
                 risk_level: 'Low',
-                valid_until: '2027-06-15',
                 traceability_level: 'High',
                 ndpe_violation_found: false,
                 public_grievance_flag: false,
@@ -1103,7 +1046,7 @@ const App = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">Upload Mill Evaluation</h2>
+                <h2 className="text-xl font-bold text-gray-900">{isEditMode ? 'Edit Mill Evaluation' : 'Upload Mill Evaluation'}</h2>
                 <p className="text-sm text-gray-600 mt-1">Step {uploadStep} of 4</p>
                 </div>
     
@@ -1165,7 +1108,7 @@ const App = () => {
                         <div className="grid grid-cols-2 gap-2 text-sm text-blue-800">
                             <div>• Recommendation (Yes/No)</div>
                             <div>• Risk Level (High/Low)</div>
-                            <div>• Valid Until Date</div>
+                            <div>• Traceability Level</div>
                             <div>• NDPE Violations</div>
                             <div>• Public Grievances</div>
                             <div>• FFB Source Distribution</div>
@@ -1183,6 +1126,31 @@ const App = () => {
                         <span className="font-medium text-green-900">Data extracted successfully! Please review:</span>
                         </div>
                     </div>
+
+                    {(isEditMode || userRole === 'Sustainability Team') && (
+                        <div className="p-4 rounded-lg border-2 border-gray-200 bg-gray-50">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Sourcing Status</label>
+                            <select
+                                value={uploadData.sourcing_status || 'Unknown'}
+                                onChange={(e) => setUploadData({ ...uploadData, sourcing_status: e.target.value as SourcingStatus })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                disabled={userRole !== 'Sustainability Team'}
+                            >
+                                <option>Delivering</option>
+                                <option>Progressing</option>
+                                <option>Commitment & Starting Action</option>
+                                <option>Awareness</option>
+                                <option>Known</option>
+                                <option>Unknown</option>
+                            </select>
+                            {uploadMill?.sourcing_status_last_updated && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Last updated: {uploadMill.sourcing_status_last_updated}
+                                </p>
+                            )}
+                            {userRole !== 'Sustainability Team' && <p className="text-xs text-gray-500 mt-1">Only Sustainability Team can edit this field.</p>}
+                        </div>
+                    )}
     
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -1206,15 +1174,6 @@ const App = () => {
                             <option value="Low">Low</option>
                             <option value="High">High</option>
                         </select>
-                        </div>
-                        <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Valid Until</label>
-                        <input 
-                            type="date" 
-                            value={uploadData.valid_until}
-                            onChange={(e) => setUploadData({...uploadData, valid_until: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        />
                         </div>
                         <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Traceability</label>
@@ -1313,9 +1272,9 @@ const App = () => {
                     
                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                         <p className="text-sm"><strong>Mill:</strong> {uploadMill.mill_name}</p>
+                        <p className="text-sm"><strong>Sourcing Status:</strong> {uploadData.sourcing_status}</p>
                         <p className="text-sm"><strong>Recommendation:</strong> {uploadData.recommendation}</p>
                         <p className="text-sm"><strong>Risk Level:</strong> {uploadData.risk_level}</p>
-                        <p className="text-sm"><strong>Valid Until:</strong> {uploadData.valid_until}</p>
                         <p className="text-sm"><strong>Eligibility:</strong> {uploadData.recommendation === 'Yes' && !uploadData.ndpe_violation_found ? 'Eligible' : 'Not Eligible'}</p>
                     </div>
     
@@ -1323,8 +1282,7 @@ const App = () => {
                         <h3 className="font-medium text-blue-900 mb-2">⚠️ This will:</h3>
                         <ul className="text-sm text-blue-800 space-y-1">
                         <li>• Update mill status to "{uploadData.recommendation === 'Yes' ? 'Eligible' : 'Not Eligible'}"</li>
-                        <li>• Create new evaluation record</li>
-                        <li>• Add entry to Evaluation History</li>
+                        <li>• {isEditMode ? 'Update the' : 'Create a new'} evaluation record</li>
                         <li>• Notify trading team</li>
                         </ul>
                     </div>
@@ -1357,7 +1315,30 @@ const App = () => {
                     </button>
                     {uploadStep === 1 && uploadMill && (
                     <button 
-                        onClick={() => setUploadStep(2)}
+                        onClick={() => {
+                            if (isEditMode) {
+                                // If editing, pre-fill data and skip to review step
+                                const millToEdit = enrichedMills.find(m => m.mill_id === uploadMill.mill_id);
+                                if (millToEdit) {
+                                    setUploadData({
+                                        recommendation: millToEdit.recommendation,
+                                        risk_level: millToEdit.risk_level,
+                                        sourcing_status: millToEdit.sourcing_status,
+                                        traceability_level: millToEdit.traceability_level,
+                                        ndpe_violation_found: millToEdit.ndpe_violation_found,
+                                        public_grievance_flag: millToEdit.public_grievance_flag,
+                                        deforestation_alerts: millToEdit.deforestation_alerts,
+                                        hotspot_alerts: millToEdit.hotspot_alerts,
+                                        ffb_source_own_pct: millToEdit.ffb_source_own_pct,
+                                        ffb_source_plasma_pct: millToEdit.ffb_source_plasma_pct,
+                                        ffb_source_independent_pct: millToEdit.ffb_source_independent_pct,
+                                    });
+                                    setUploadStep(3);
+                                }
+                            } else {
+                                setUploadStep(2);
+                            }
+                        }}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
                         Next →
@@ -1475,6 +1456,7 @@ const App = () => {
                 <button 
                   onClick={() => {
                     setUploadMill(null);
+                    setUploadData({});
                     setUploadModalOpen(true);
                   }}
                   className="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
@@ -1484,17 +1466,10 @@ const App = () => {
                 </button>
               )}
               <button
-                onClick={() => setView('history')}
-                className="inline-flex items-center px-3 py-1.5 text-xs border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                <Clock className="w-3.5 h-3.5 mr-1.5" />
-                History
-              </button>
-              <button
                 onClick={() => setView('settings')}
                 className="inline-flex items-center px-3 py-1.5 text-xs border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                <Settings className="w-3.5 h-3.5 mr-1.5" />
                 Settings
               </button>
             </div>
@@ -1571,7 +1546,7 @@ const App = () => {
         </div>
 
         {/* Statistics */}
-        <div className="grid grid-cols-6 gap-3 mb-4">
+        <div className="grid grid-cols-5 gap-3 mb-4">
           <div className="bg-white rounded-lg shadow-sm border p-3">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs text-gray-600">Total Mills</p>
@@ -1599,13 +1574,6 @@ const App = () => {
               <AlertTriangle className="w-4 h-4 text-gray-400" />
             </div>
             <p className="text-2xl font-bold text-gray-900">{statistics.notEvaluated}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border p-3">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-600">Expired</p>
-              <XCircle className="w-4 h-4 text-yellow-500" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{statistics.expired + statistics.expiringSoon}</p>
           </div>
           <div className="bg-white rounded-lg shadow-sm border p-3">
             <div className="flex items-center justify-between mb-1">
@@ -1786,13 +1754,12 @@ const App = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mill</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Region</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sourcing Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facility</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Distance</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Updated</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -1801,11 +1768,25 @@ const App = () => {
                 {filteredMills.map(mill => (
                   <tr key={mill.mill_id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-gray-900">{mill.mill_name}</div>
-                      <div className="text-xs text-gray-500">{mill.mill_id}</div>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium text-gray-900 mr-2">{mill.mill_name}</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeColor(mill.evaluation_status)}`}>
+                              {mill.evaluation_status}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">{mill.mill_id}</div>
+                          <div className="text-xs text-gray-500">{mill.parent_group}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{mill.parent_group}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{mill.region}</td>
+                     <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getSourcingStatusBadgeColor(mill.sourcing_status)}`}>
+                        {mill.sourcing_status}
+                      </span>
+                    </td>
                     <td 
                       className="px-4 py-3 text-sm relative cursor-pointer"
                       onMouseEnter={(e) => handleBuyerHover(e, mill)}
@@ -1820,7 +1801,6 @@ const App = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{mill.productSummary}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">
                       {activeScenario === 'facility-driven' && selectedFacility !== 'all' 
                         ? selectedFacility 
@@ -1831,17 +1811,8 @@ const App = () => {
                         ? `${(mill as any).distanceToSelectedFacility?.toFixed(1) || 'N/A'} km`
                         : `${mill.nearestFacilityDistance} km`}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeColor(mill.evaluation_status)}`}>
-                        {mill.evaluation_status}
-                      </span>
-                      {mill.nbl_flag && (
-                        <div className="mt-1">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-300">
-                            🚫 NBL
-                          </span>
-                        </div>
-                      )}
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                        {mill.last_updated || 'N/A'}
                     </td>
                     <td className="px-4 py-3">
                       {mill.risk_level ? (
@@ -1854,31 +1825,67 @@ const App = () => {
                         <span className="text-xs text-gray-400">N/A</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm space-x-2">
-                      <button
-                        onClick={() => {
-                          setSelectedMill(mill);
-                          // Route to appropriate view based on evaluation status
-                          if (mill.evaluation_status === 'Under Evaluation') {
-                            setView('asana-workflow');
-                          } else if (mill.current_evaluation_id) {
-                            setView('evaluation-detail');
-                          } else {
-                            setView('detail');
-                          }
-                        }}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        View
-                      </button>
-                      {mill.evaluation_status !== 'Under Evaluation' && (
+                    <td className="px-4 py-3 text-sm space-x-2 whitespace-nowrap">
                         <button
-                          onClick={() => handleRequestEvaluation(mill)}
-                          className="text-green-600 hover:text-green-800 font-medium"
+                            onClick={() => {
+                            setSelectedMill(mill);
+                            // Route to appropriate view based on evaluation status
+                            if (mill.evaluation_status === 'Under Evaluation') {
+                                setView('asana-workflow');
+                            } else if (mill.current_evaluation_id) {
+                                setView('evaluation-detail');
+                            } else {
+                                setView('detail');
+                            }
+                            }}
+                            className="text-blue-600 hover:text-blue-800 font-medium"
                         >
-                          Request
+                            View
                         </button>
-                      )}
+                        {userRole === 'Sustainability Team' ? (
+                            mill.evaluation_status !== 'Under Evaluation' && (
+                                <button
+                                    onClick={() => {
+                                        const millToModify = enrichedMills.find(m => m.mill_id === mill.mill_id);
+                                        if (millToModify) {
+                                            setUploadMill(millToModify);
+                                            setUploadStep(1); // Start from step 1
+                                            if (millToModify.current_evaluation_id) {
+                                                // Pre-fill for editing
+                                                setUploadData({
+                                                    recommendation: millToModify.recommendation,
+                                                    risk_level: millToModify.risk_level,
+                                                    sourcing_status: millToModify.sourcing_status,
+                                                    traceability_level: millToModify.traceability_level,
+                                                    ndpe_violation_found: millToModify.ndpe_violation_found,
+                                                    public_grievance_flag: millToModify.public_grievance_flag,
+                                                    deforestation_alerts: millToModify.deforestation_alerts,
+                                                    hotspot_alerts: millToModify.hotspot_alerts,
+                                                    ffb_source_own_pct: millToModify.ffb_source_own_pct,
+                                                    ffb_source_plasma_pct: millToModify.ffb_source_plasma_pct,
+                                                    ffb_source_independent_pct: millToModify.ffb_source_independent_pct,
+                                                });
+                                            } else {
+                                                setUploadData({ sourcing_status: millToModify.sourcing_status });
+                                            }
+                                            setUploadModalOpen(true);
+                                        }
+                                    }}
+                                    className="text-green-600 hover:text-green-800 font-medium"
+                                >
+                                    {mill.current_evaluation_id ? 'Edit' : 'Create'}
+                                </button>
+                            )
+                        ) : (
+                            mill.evaluation_status === 'Not Evaluated' && (
+                                <button
+                                    onClick={() => handleRequestEvaluation(mill)}
+                                    className="text-green-600 hover:text-green-800 font-medium"
+                                >
+                                    Request
+                                </button>
+                            )
+                        )}
                     </td>
                   </tr>
                 ))}
@@ -1919,12 +1926,6 @@ const App = () => {
                     </span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    {selectedMill.validityStatus && (
-                      <span className={`px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusBadgeColor(selectedMill.validityStatus)}`}>
-                        {selectedMill.validityStatus}
-                        {selectedMill.daysUntilExpiry && selectedMill.daysUntilExpiry >= 0 && ` (${selectedMill.daysUntilExpiry} days)`}
-                      </span>
-                    )}
                     <span className={`px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusBadgeColor(selectedMill.evaluation_status)}`}>
                       {selectedMill.evaluation_status}
                     </span>
@@ -1998,8 +1999,8 @@ const App = () => {
                               <p className="font-medium text-sm text-gray-900 mt-1">{selectedMill.traceability_level}</p>
                             </div>
                             <div>
-                              <p className="text-sm text-gray-600">Valid Until</p>
-                              <p className="font-medium text-sm text-gray-900 mt-1">{selectedMill.valid_until}</p>
+                              <p className="text-sm text-gray-600">Last Updated</p>
+                              <p className="font-medium text-sm text-gray-900 mt-1">{selectedMill.last_updated}</p>
                             </div>
                           </div>
     
@@ -2190,13 +2191,6 @@ const App = () => {
                           Request Re-evaluation
                         </button>
                       )}
-                      <button
-                        onClick={() => setView('history')}
-                        className="w-full px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 flex items-center justify-center text-sm"
-                      >
-                        <Clock className="w-4 h-4 mr-2" />
-                        View History
-                        </button>
                     </div>
                   </div>
     
@@ -2205,13 +2199,17 @@ const App = () => {
                     <h2 className="text-base font-semibold text-gray-900 mb-3">Quick Stats</h2>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
+                          <span className="text-gray-600">Sourcing Status</span>
+                          <span className="font-medium text-gray-900">{selectedMill.sourcing_status || 'Unknown'}</span>
+                      </div>
+                      <div className="flex justify-between">
                         <span className="text-gray-600">Engagement</span>
                         <span className="font-medium text-gray-900">{selectedMill.group_engagement}</span>
                       </div>
-                      {selectedMill.last_eval_date && (
+                      {selectedMill.last_updated && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Last Evaluated</span>
-                          <span className="font-medium text-gray-900">{selectedMill.last_eval_date}</span>
+                          <span className="text-gray-600">Last Updated</span>
+                          <span className="font-medium text-gray-900">{selectedMill.last_updated}</span>
                         </div>
                       )}
                     </div>
@@ -2287,21 +2285,11 @@ const App = () => {
                   <div className="grid grid-cols-4 gap-4 pt-4 border-t border-gray-200">
                     <div>
                       <p className="text-xs text-gray-600">Evaluation Date</p>
-                      <p className="text-sm font-semibold text-gray-900">{selectedMill.last_eval_date}</p>
+                      <p className="text-sm font-semibold text-gray-900">{selectedMill.last_updated}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600">Valid Until</p>
-                      <p className="text-sm font-semibold text-gray-900">{selectedMill.valid_until}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600">Status Validity</p>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        selectedMill.status_validity === 'Valid' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {selectedMill.status_validity}
-                      </span>
+                      <p className="text-xs text-gray-600">Last Updated</p>
+                      <p className="text-sm font-semibold text-gray-900">{selectedMill.last_updated}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Risk Level</p>
@@ -2566,18 +2554,11 @@ const App = () => {
                       <div className="space-y-2">
                         <button
                           onClick={() => {
-                            setSelectedMill(null);
                             setView('detail');
                           }}
                           className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                         >
                           View Full Mill Detail
-                        </button>
-                        <button
-                          onClick={() => setView('history')}
-                          className="w-full px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 text-sm"
-                        >
-                          View History
                         </button>
                       </div>
                     </div>
@@ -2820,79 +2801,7 @@ const App = () => {
           </div>
         );
     }
-    if (view === 'history') {
-        return (
-            <div className="min-h-screen bg-gray-50">
-              <div className="bg-white shadow-sm border-b">
-                <div className="max-w-full mx-auto px-6 py-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h1 className="text-xl font-bold text-gray-900">Evaluation History</h1>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          userRole === 'Sustainability Team' 
-                            ? 'bg-green-100 text-green-700 border border-green-300' 
-                            : 'bg-blue-100 text-blue-700 border border-blue-300'
-                        }`}>
-                          {userRole}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600">{evaluationHistory.length} evaluations completed</p>
-                    </div>
-                    <button
-                      onClick={() => setView('dashboard')}
-                      className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                    >
-                      ← Back to Dashboard
-                    </button>
-                  </div>
-                </div>
-              </div>
-      
-              <div className="max-w-full mx-auto px-6 py-6">
-                <div className="bg-white rounded-lg shadow-sm border">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mill</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eval Date</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valid Until</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Recommendation</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eligibility</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {evaluationHistory.map(evaluation => (
-                        <tr key={evaluation.evaluation_id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
-                            <div className="text-sm font-medium text-gray-900">{evaluation.mill_name}</div>
-                            <div className="text-xs text-gray-500">{evaluation.mill_id}</div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{evaluation.evaluation_date}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{evaluation.valid_until}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              evaluation.risk_level === 'High' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                            }`}>
-                              {evaluation.risk_level}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{evaluation.recommendation}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeColor(evaluation.eligibility_status)}`}>
-                              {evaluation.eligibility_status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          );
-    }
+    
     if (view === 'settings') {
         return (
             <div className="min-h-screen bg-gray-50">
@@ -2947,7 +2856,7 @@ const App = () => {
                           Current Role: {userRole}
                         </p>
                         {userRole === 'Sustainability Team' ? (
-                          <p className="text-xs text-green-700 mt-1">✓ You can upload evaluation forms</p>
+                          <p className="text-xs text-green-700 mt-1">✓ You can create and edit evaluation forms</p>
                         ) : (
                           <p className="text-xs text-blue-700 mt-1">• You can request evaluations and view reports</p>
                         )}
