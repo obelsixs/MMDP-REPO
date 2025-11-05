@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, AlertTriangle, CheckCircle, XCircle, Calendar, Users, MapPin, FileText, ExternalLink, Upload, TrendingUp, Package, Navigation, Database, Activity, RefreshCw, Send, Clock, Award, Star, Bell, ArrowRight, CheckSquare, Factory, Droplet, Eye, RotateCcw, ChevronDown, ChevronRight, Settings, FileUp, ArrowLeft, View, Pencil, Trash2, Landmark, Wheat, Building, Target, UserCheck, ShieldAlert, Info, Scale, UploadCloud } from 'lucide-react';
+import { Search, Filter, AlertTriangle, CheckCircle, XCircle, Calendar, Users, MapPin, FileText, ExternalLink, Upload, TrendingUp, Package, Navigation, Database, Activity, RefreshCw, Send, Clock, Award, Star, Bell, ArrowRight, CheckSquare, Factory, Droplet, Eye, RotateCcw, ChevronDown, ChevronRight, Settings, FileUp, ArrowLeft, View, Pencil, Trash2, Landmark, Wheat, Building, Target, UserCheck, ShieldAlert, Info, Scale, UploadCloud, Plus } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
 
@@ -698,6 +698,12 @@ const App = () => {
     const [uploadMill, setUploadMill] = useState<Mill | null>(null);
     const [uploadData, setUploadData] = useState<UploadData>({});
     const [isUploading, setIsUploading] = useState(false);
+
+    // Add Mill modal state
+    const [addMillModalOpen, setAddMillModalOpen] = useState(false);
+    const [addMillStep, setAddMillStep] = useState(1);
+    const [newMillData, setNewMillData] = useState<Partial<Mill>>({});
+    const [isSubmittingMill, setIsSubmittingMill] = useState(false);
 
     // Toast notification
     const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
@@ -1610,6 +1616,589 @@ const App = () => {
 
       {uploadModalOpen && <UploadWizard />}
 
+      {addMillModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Add New Mill</h2>
+                <p className="text-sm text-gray-600 mt-1">Step {addMillStep} of 5</p>
+              </div>
+              <button
+                onClick={() => {
+                  setAddMillModalOpen(false);
+                  setNewMillData({});
+                  setAddMillStep(1);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="px-6 py-3 bg-gray-50">
+              <div className="flex items-center justify-between mb-2">
+                {['Basic Info', 'Location', 'Operations', 'Risk & Compliance', 'Review'].map((step, idx) => (
+                  <div key={idx} className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                      idx + 1 < addMillStep ? 'bg-green-600 text-white' :
+                      idx + 1 === addMillStep ? 'bg-blue-600 text-white' :
+                      'bg-gray-300 text-gray-600'
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    {idx < 4 && <div className={`w-12 h-1 ${idx + 1 < addMillStep ? 'bg-green-600' : 'bg-gray-300'}`} />}
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-gray-600">
+                {['Basic Info', 'Location', 'Operations', 'Risk', 'Review'].map((label, idx) => (
+                  <span key={idx} className={idx + 1 === addMillStep ? 'font-semibold text-blue-600' : ''}>{label}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-6">
+              {/* Step 1: Basic Information */}
+              {addMillStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mill ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newMillData.mill_id || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, mill_id: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., MILL-2025-001"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mill Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newMillData.mill_name || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, mill_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter mill name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Parent Group <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newMillData.parent_group || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, parent_group: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter parent company name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Group Engagement <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={newMillData.group_engagement || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, group_engagement: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select engagement level</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                      <option value="None">None</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Location */}
+              {addMillStep === 2 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Location Information</h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Region <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={newMillData.region || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, region: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select region</option>
+                      <option value="Sumatra">Sumatra</option>
+                      <option value="Kalimantan">Kalimantan</option>
+                      <option value="Java">Java</option>
+                      <option value="Sulawesi">Sulawesi</option>
+                      <option value="Papua">Papua</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Province <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newMillData.province_en || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, province_en: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter province name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Island <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={newMillData.island || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, island: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select island</option>
+                      <option value="Sumatra">Sumatra</option>
+                      <option value="Kalimantan">Kalimantan</option>
+                      <option value="Java">Java</option>
+                      <option value="Sulawesi">Sulawesi</option>
+                      <option value="Papua">Papua</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Latitude <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.000001"
+                        value={newMillData.latitude || ''}
+                        onChange={(e) => setNewMillData({ ...newMillData, latitude: parseFloat(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 1.234567"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Longitude <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.000001"
+                        value={newMillData.longitude || ''}
+                        onChange={(e) => setNewMillData({ ...newMillData, longitude: parseFloat(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 101.234567"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Operational Details */}
+              {addMillStep === 3 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Operational Details</h3>
+                  <p className="text-sm text-gray-600 mb-4">All fields in this step are optional</p>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Capacity (ton/hour)
+                    </label>
+                    <input
+                      type="number"
+                      value={newMillData.capacity_ton_per_hour || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, capacity_ton_per_hour: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., 60"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Traceability Level
+                    </label>
+                    <select
+                      value={newMillData.traceability_level || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, traceability_level: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select level</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">FFB Source Distribution (%)</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Own</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={newMillData.ffb_source_own_pct || ''}
+                          onChange={(e) => setNewMillData({ ...newMillData, ffb_source_own_pct: parseFloat(e.target.value) })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                          placeholder="0-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Plasma</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={newMillData.ffb_source_plasma_pct || ''}
+                          onChange={(e) => setNewMillData({ ...newMillData, ffb_source_plasma_pct: parseFloat(e.target.value) })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                          placeholder="0-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Independent</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={newMillData.ffb_source_independent_pct || ''}
+                          onChange={(e) => setNewMillData({ ...newMillData, ffb_source_independent_pct: parseFloat(e.target.value) })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                          placeholder="0-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      FFB Source Comment
+                    </label>
+                    <textarea
+                      value={newMillData.ffb_source_comment || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, ffb_source_comment: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                      placeholder="Additional notes about FFB sources"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Risk & Compliance */}
+              {addMillStep === 4 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk & Compliance</h3>
+                  <p className="text-sm text-gray-600 mb-4">All fields in this step are optional</p>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Risk Level
+                    </label>
+                    <select
+                      value={newMillData.risk_level || 'Low'}
+                      onChange={(e) => setNewMillData({ ...newMillData, risk_level: e.target.value as RiskLevel })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Flags & Alerts</h4>
+
+                    <div className="space-y-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={newMillData.nbl_flag || false}
+                          onChange={(e) => setNewMillData({ ...newMillData, nbl_flag: e.target.checked })}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">NBL Flag (No Buy List)</span>
+                      </label>
+
+                      {newMillData.nbl_flag && (
+                        <div className="ml-6">
+                          <input
+                            type="text"
+                            value={newMillData.nbl_reason || ''}
+                            onChange={(e) => setNewMillData({ ...newMillData, nbl_reason: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            placeholder="NBL reason"
+                          />
+                        </div>
+                      )}
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={newMillData.ndpe_violation_found || false}
+                          onChange={(e) => setNewMillData({ ...newMillData, ndpe_violation_found: e.target.checked })}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">NDPE Violation Found</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={newMillData.public_grievance_flag || false}
+                          onChange={(e) => setNewMillData({ ...newMillData, public_grievance_flag: e.target.checked })}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Public Grievance Flag</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Deforestation Alerts
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newMillData.deforestation_alerts || ''}
+                        onChange={(e) => setNewMillData({ ...newMillData, deforestation_alerts: parseInt(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Hotspot Alerts
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newMillData.hotspot_alerts || ''}
+                        onChange={(e) => setNewMillData({ ...newMillData, hotspot_alerts: parseInt(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Peat Presence
+                    </label>
+                    <select
+                      value={newMillData.peat_presence || ''}
+                      onChange={(e) => setNewMillData({ ...newMillData, peat_presence: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select status</option>
+                      <option value="None">None</option>
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 5: Review & Submit */}
+              {addMillStep === 5 && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Review & Submit</h3>
+                  <p className="text-sm text-gray-600">Please review all information before submitting</p>
+
+                  {/* Basic Information */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <Info className="w-4 h-4 mr-2 text-blue-600" />
+                      Basic Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div><span className="font-medium">Mill ID:</span> {newMillData.mill_id || 'N/A'}</div>
+                      <div><span className="font-medium">Mill Name:</span> {newMillData.mill_name || 'N/A'}</div>
+                      <div><span className="font-medium">Parent Group:</span> {newMillData.parent_group || 'N/A'}</div>
+                      <div><span className="font-medium">Engagement:</span> {newMillData.group_engagement || 'N/A'}</div>
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                      Location
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div><span className="font-medium">Region:</span> {newMillData.region || 'N/A'}</div>
+                      <div><span className="font-medium">Province:</span> {newMillData.province_en || 'N/A'}</div>
+                      <div><span className="font-medium">Island:</span> {newMillData.island || 'N/A'}</div>
+                      <div><span className="font-medium">Coordinates:</span> {newMillData.latitude && newMillData.longitude ? `${newMillData.latitude}, ${newMillData.longitude}` : 'N/A'}</div>
+                    </div>
+                  </div>
+
+                  {/* Operations */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <Factory className="w-4 h-4 mr-2 text-blue-600" />
+                      Operations
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div><span className="font-medium">Capacity:</span> {newMillData.capacity_ton_per_hour ? `${newMillData.capacity_ton_per_hour} t/h` : 'Not specified'}</div>
+                      <div><span className="font-medium">Traceability:</span> {newMillData.traceability_level || 'Not specified'}</div>
+                    </div>
+                  </div>
+
+                  {/* Risk */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <ShieldAlert className="w-4 h-4 mr-2 text-blue-600" />
+                      Risk & Compliance
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div><span className="font-medium">Risk Level:</span> {newMillData.risk_level || 'Low'}</div>
+                      <div><span className="font-medium">NBL Flag:</span> {newMillData.nbl_flag ? 'Yes' : 'No'}</div>
+                      <div><span className="font-medium">NDPE Violation:</span> {newMillData.ndpe_violation_found ? 'Yes' : 'No'}</div>
+                      <div><span className="font-medium">Grievance:</span> {newMillData.public_grievance_flag ? 'Yes' : 'No'}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between">
+              <button
+                onClick={() => {
+                  if (addMillStep > 1) {
+                    setAddMillStep(addMillStep - 1);
+                  }
+                }}
+                disabled={addMillStep === 1}
+                className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                  addMillStep === 1
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </button>
+
+              {addMillStep < 5 ? (
+                <button
+                  onClick={() => {
+                    // Validate required fields for each step
+                    if (addMillStep === 1) {
+                      if (!newMillData.mill_id || !newMillData.mill_name || !newMillData.parent_group || !newMillData.group_engagement) {
+                        showToast('Please fill all required fields', 'error');
+                        return;
+                      }
+                    } else if (addMillStep === 2) {
+                      if (!newMillData.region || !newMillData.province_en || !newMillData.island || !newMillData.latitude || !newMillData.longitude) {
+                        showToast('Please fill all required fields', 'error');
+                        return;
+                      }
+                    }
+                    setAddMillStep(addMillStep + 1);
+                  }}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Next
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsSubmittingMill(true);
+
+                    // Generate unique mill ID if not provided
+                    const millId = newMillData.mill_id || `MILL-${Date.now()}`;
+
+                    // Create new mill with defaults
+                    const newMill: Mill = {
+                      mill_id: millId,
+                      mill_name: newMillData.mill_name || '',
+                      parent_group: newMillData.parent_group || '',
+                      group_engagement: newMillData.group_engagement || '',
+                      region: newMillData.region || '',
+                      province_en: newMillData.province_en || '',
+                      island: newMillData.island || '',
+                      latitude: newMillData.latitude || 0,
+                      longitude: newMillData.longitude || 0,
+                      evaluation_status: 'Not Evaluated' as EvaluationStatus,
+                      current_evaluation_id: null,
+                      last_updated: new Date().toISOString(),
+                      risk_level: (newMillData.risk_level as RiskLevel) || 'Low',
+                      sourcing_status: 'Unknown' as SourcingStatus,
+                      sourcing_status_last_updated: new Date().toISOString(),
+                      nbl_flag: newMillData.nbl_flag || false,
+                      nbl_reason: newMillData.nbl_reason,
+                      distance_to_nearest: 0,
+                      nearest_facility: 'TBD',
+                      scenario_tags: [],
+                      capacity_ton_per_hour: newMillData.capacity_ton_per_hour,
+                      traceability_level: newMillData.traceability_level,
+                      ffb_source_own_pct: newMillData.ffb_source_own_pct,
+                      ffb_source_plasma_pct: newMillData.ffb_source_plasma_pct,
+                      ffb_source_independent_pct: newMillData.ffb_source_independent_pct,
+                      ffb_source_comment: newMillData.ffb_source_comment,
+                      ndpe_violation_found: newMillData.ndpe_violation_found,
+                      public_grievance_flag: newMillData.public_grievance_flag,
+                      deforestation_alerts: newMillData.deforestation_alerts,
+                      hotspot_alerts: newMillData.hotspot_alerts,
+                      peat_presence: newMillData.peat_presence,
+                    };
+
+                    // Add to mills array at the beginning
+                    setMills([newMill, ...mills]);
+
+                    // Close modal and reset
+                    setTimeout(() => {
+                      setIsSubmittingMill(false);
+                      setAddMillModalOpen(false);
+                      setNewMillData({});
+                      setAddMillStep(1);
+                      showToast(`Mill "${newMill.mill_name}" added successfully!`, 'success');
+                    }, 500);
+                  }}
+                  disabled={isSubmittingMill}
+                  className="inline-flex items-center px-6 py-2 text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                >
+                  {isSubmittingMill ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Submit Mill
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-full mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
@@ -1635,17 +2224,30 @@ const App = () => {
             </div>
             <div className="flex space-x-2">
               {userRole === 'Sustainability Team' && (
-                <button 
-                  onClick={() => {
-                    setUploadMill(null);
-                    setUploadData({});
-                    setUploadModalOpen(true);
-                  }}
-                  className="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  <Upload className="w-3.5 h-3.5 mr-1.5" />
-                  Upload Evaluation
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      setUploadMill(null);
+                      setUploadData({});
+                      setUploadModalOpen(true);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+                  >
+                    <Upload className="w-3.5 h-3.5 mr-1.5" />
+                    Upload Evaluation
+                  </button>
+                  <button
+                    onClick={() => {
+                      setNewMillData({});
+                      setAddMillStep(1);
+                      setAddMillModalOpen(true);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    Add Mill
+                  </button>
+                </>
               )}
               <button
                 onClick={() => setView('settings')}
