@@ -41,6 +41,8 @@ type SourcingStatus = 'Delivering' | 'Progressing' | 'Commitment & Starting Acti
 interface Mill {
     mill_id: string;
     mill_name: string;
+    group?: string;
+    company?: string;
     parent_group: string;
     group_engagement: string;
     region: string;
@@ -141,6 +143,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000001",
     mill_name: "Forest Green Palm Mill",
+    group: "Jambi Operations",
+    company: "Sustainable Palm Industries",
     parent_group: "Sustainable Palm Industries",
     group_engagement: "Active",
     region: "Jambi",
@@ -182,6 +186,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000003",
     mill_name: "Kalimantan Sustainable Mills",
+    group: "Kalimantan Division",
+    company: "GAR Internal",
     parent_group: "GAR Internal",
     group_engagement: "Active",
     region: "Kalimantan",
@@ -223,6 +229,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000005",
     mill_name: "East Coast Palm Solutions",
+    group: "East Coast Division",
+    company: "Sustainable Palm Industries",
     parent_group: "Sustainable Palm Industries",
     group_engagement: "Active",
     region: "Jambi",
@@ -264,6 +272,8 @@ const DEMO_MILLS: Mill[] = [
    {
     mill_id: "PO1000009",
     mill_name: "Riau Central Mill",
+    group: "Riau Operations",
+    company: "Independent Supplier",
     parent_group: "Independent Supplier",
     group_engagement: "Active",
     region: "Riau",
@@ -297,6 +307,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000010",
     mill_name: "Jambi Delta Mill",
+    group: "Jambi Delta Operations",
+    company: "Sustainable Palm Industries",
     parent_group: "Sustainable Palm Industries",
     group_engagement: "Active",
     region: "Jambi",
@@ -332,6 +344,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000002",
     mill_name: "Sumatra Agri Mill",
+    group: "Sumatra Agri Division",
+    company: "Wilmar Group",
     parent_group: "Wilmar Group",
     group_engagement: "Suspended",
     region: "Riau",
@@ -376,6 +390,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000006",
     mill_name: "Northern Territory Mill",
+    group: "Northern Territory Division",
+    company: "Wilmar Group",
     parent_group: "Wilmar Group",
     group_engagement: "Suspended",
     region: "Riau",
@@ -414,6 +430,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000004",
     mill_name: "Palm Valley Processing",
+    group: "Palm Valley Division",
+    company: "Independent Supplier",
     parent_group: "Independent Supplier",
     group_engagement: "New",
     region: "Sumatra",
@@ -445,6 +463,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000011",
     mill_name: "Under Review Mill Gamma",
+    group: "Gamma Operations",
+    company: "Regional Cooperative",
     parent_group: "Regional Cooperative",
     group_engagement: "New",
     region: "Kalimantan",
@@ -478,6 +498,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000012",
     mill_name: "New Supplier Mill Delta",
+    group: "Delta Operations",
+    company: "Emerging Palm Group",
     parent_group: "Emerging Palm Group",
     group_engagement: "New",
     region: "Riau",
@@ -499,6 +521,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000013",
     mill_name: "Potential Mill Epsilon",
+    group: "Epsilon Division",
+    company: "Local Supplier Co.",
     parent_group: "Local Supplier Co.",
     group_engagement: "New",
     region: "Jambi",
@@ -520,6 +544,8 @@ const DEMO_MILLS: Mill[] = [
   {
     mill_id: "PO1000014",
     mill_name: "Competitor Supplier Mill",
+    group: "Sumatra Division",
+    company: "Independent Supplier",
     parent_group: "Independent Supplier",
     group_engagement: "Active",
     region: "Sumatra",
@@ -2591,6 +2617,8 @@ const App = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mill</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Region</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sourcing Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
@@ -2619,6 +2647,8 @@ const App = () => {
                         </div>
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{mill.group || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{mill.company || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{mill.region}</td>
                      <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getSourcingStatusBadgeColor(mill.sourcing_status)}`}>
