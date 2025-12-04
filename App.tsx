@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, AlertTriangle, CheckCircle, XCircle, Calendar, Users, MapPin, FileText, ExternalLink, Upload, TrendingUp, Package, Navigation, Database, Activity, RefreshCw, Send, Clock, Award, Star, Bell, ArrowRight, CheckSquare, Factory, Droplet, Eye, RotateCcw, ChevronDown, ChevronRight, Settings, FileUp, ArrowLeft, View, Pencil, Trash2, Landmark, Wheat, Building, Target, UserCheck, ShieldAlert, Info, Scale, UploadCloud, Plus } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
@@ -741,6 +741,52 @@ const App = () => {
     // State for detail view accordion
     const [expandedSection, setExpandedSection] = useState('evaluation');
 
+    // State for data loading
+    const [loading, setLoading] = useState(true);
+    const [facilities, setFacilities] = useState<Facility[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [distances, setDistances] = useState<MillFacilityDistance[]>([]);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(100);
+
+    // Load data from JSON files
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setLoading(true);
+
+                const [millsRes, facilitiesRes, transactionsRes, distancesRes] = await Promise.all([
+                    fetch('/data/mills.json'),
+                    fetch('/data/facilities.json'),
+                    fetch('/data/transactions.json'),
+                    fetch('/data/distances.json')
+                ]);
+
+                const millsData = await millsRes.json();
+                const facilitiesData = await facilitiesRes.json();
+                const transactionsData = await transactionsRes.json();
+                const distancesData = await distancesRes.json();
+
+                setMills(millsData);
+                setFacilities(facilitiesData);
+                setTransactions(transactionsData);
+                setDistances(distancesData);
+
+                console.log(`✅ Loaded ${millsData.length} mills, ${facilitiesData.length} facilities, ${transactionsData.length} transactions`);
+            } catch (error) {
+                console.error('❌ Error loading data:', error);
+                // Fallback to demo data if JSON loading fails
+                setMills(DEMO_MILLS);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadData();
+    }, []);
+
     const showToast = (message: string, type: 'success' | 'error' = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
@@ -762,17 +808,17 @@ const App = () => {
     // Enhanced mills with computed properties
     const enrichedMills: EnrichedMill[] = useMemo(() => {
         return mills.map(mill => {
-        const transactions = DEMO_TRANSACTIONS.filter(t => t.mill_id === mill.mill_id);
-        
-        const uniqueBuyers = [...new Set(transactions.map(t => t.buyer_entity))];
+        const millTransactions = transactions.filter(t => t.mill_id === mill.mill_id);
+
+        const uniqueBuyers = [...new Set(millTransactions.map(t => t.buyer_entity))];
         const buyerSummary = uniqueBuyers.join(', ');
-        const hasCompetitor = transactions.some(t => t.buyer_type === 'competitor');
-        
-        const uniqueProducts = [...new Set(transactions.map(t => t.product_type))];
+        const hasCompetitor = millTransactions.some(t => t.buyer_type === 'competitor');
+
+        const uniqueProducts = [...new Set(millTransactions.map(t => t.product_type))];
         const productSummary = uniqueProducts.join(', ');
-        
+
         const buyerProductMap: {[key: string]: {products: Set<string>, type: 'gar' | 'competitor', lastVerified: string}} = {};
-        transactions.forEach(t => {
+        millTransactions.forEach(t => {
             if (!buyerProductMap[t.buyer_entity]) {
             buyerProductMap[t.buyer_entity] = {
                 products: new Set(),
@@ -782,23 +828,23 @@ const App = () => {
             }
             buyerProductMap[t.buyer_entity].products.add(t.product_type);
         });
-        
+
         const buyerDetails = Object.entries(buyerProductMap).map(([buyer, data]) => ({
             buyer,
             products: Array.from(data.products).join(', '),
             type: data.type,
             lastVerified: data.lastVerified
         }));
-        
-        const facilityDistances = MILL_FACILITY_DISTANCES.filter(f => f.mill_id === mill.mill_id);
-        
+
+        const facilityDistances = distances.filter(f => f.mill_id === mill.mill_id);
+
         const nearestFacilityData = facilityDistances.find(f => f.ranking === 1);
         const nearestFacilityName = nearestFacilityData?.facility_name || mill.nearest_facility || 'N/A';
         const nearestFacilityDistance = nearestFacilityData?.distance_km || mill.distance_to_nearest || 0;
-        
+
         return {
             ...mill,
-            transactions,
+            transactions: millTransactions,
             buyerSummary: buyerSummary || '-',
             productSummary: productSummary || '-',
             hasCompetitor,
@@ -808,7 +854,7 @@ const App = () => {
             nearestFacilityDistance
         };
         });
-    }, [mills]);
+    }, [mills, transactions, distances]);
 
     const statistics = useMemo(() => {
         const total = enrichedMills.length;
@@ -875,22 +921,16 @@ const App = () => {
     const filteredMills = useMemo(() => {
         let result: EnrichedMill[] = [...enrichedMills];
 
-        if (activeScenario !== 'all' && activeScenario !== 'regional-supply') {
+        // Apply scenario filters
+        if (activeScenario === 'competitor-check') {
+            // Competitor Check: Show only mills with competitor transactions
+            result = result.filter(mill => mill.hasCompetitor);
+        } else if (activeScenario !== 'all' && activeScenario !== 'regional-supply' && activeScenario !== 'facility-driven') {
+            // Other scenarios: Filter by scenario_tags
             result = result.filter(mill => mill.scenario_tags?.includes(activeScenario));
         }
-        
-        if (activeScenario === 'facility-driven' && selectedFacility !== 'all') {
-            result = result.map(mill => {
-            const facilityData = mill.facilityDistances.find(f => f.facility_name === selectedFacility);
-            return {
-                ...mill,
-                distanceToSelectedFacility: facilityData?.distance_km || Infinity
-            };
-            });
-            result.sort((a, b) => (a as any).distanceToSelectedFacility - (b as any).distanceToSelectedFacility);
-            result = result.slice(0, 3);
-        }
 
+        // Apply tab filters
         if (activeTab === 'eligible') {
             result = result.filter(m => m.evaluation_status === 'Eligible');
         } else if (activeTab === 'under-evaluation') {
@@ -899,13 +939,15 @@ const App = () => {
             result = result.filter(m => m.nbl_flag);
         }
 
+        // Apply search filter
         if (searchQuery) {
-        result = result.filter(mill => 
+        result = result.filter(mill =>
             mill.mill_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             mill.mill_id.toLowerCase().includes(searchQuery.toLowerCase())
         );
         }
 
+        // Apply region/owner/risk filters
         if (filters.region !== 'all') {
         result = result.filter(mill => mill.region === filters.region);
         }
@@ -918,7 +960,8 @@ const App = () => {
         if (filters.sourcingStatus !== 'all') {
             result = result.filter(mill => mill.sourcing_status === filters.sourcingStatus);
         }
-        
+
+        // Apply buyer filter
         if (filters.buyer !== 'all') {
         if (filters.buyer === 'gar-only') {
             result = result.filter(mill => mill.transactions.length > 0 && !mill.hasCompetitor);
@@ -927,16 +970,30 @@ const App = () => {
         } else if (filters.buyer === 'no-transactions') {
             result = result.filter(mill => mill.transactions.length === 0);
         } else {
-            result = result.filter(mill => 
+            result = result.filter(mill =>
             mill.transactions.some(t => t.buyer_entity === filters.buyer)
             );
         }
         }
-        
+
+        // Apply product filter
         if (filters.product !== 'all') {
-        result = result.filter(mill => 
+        result = result.filter(mill =>
             mill.transactions.some(t => t.product_type === filters.product)
         );
+        }
+
+        // Facility-driven mode: Add distance and sort, but apply AFTER other filters
+        if (activeScenario === 'facility-driven' && selectedFacility !== 'all') {
+            result = result.map(mill => {
+            const facilityData = mill.facilityDistances.find(f => f.facility_name === selectedFacility);
+            return {
+                ...mill,
+                distanceToSelectedFacility: facilityData?.distance_km || Infinity
+            };
+            });
+            // Sort by distance to selected facility
+            result.sort((a, b) => (a as any).distanceToSelectedFacility - (b as any).distanceToSelectedFacility);
         }
 
         if (sortConfig) {
@@ -961,8 +1018,34 @@ const App = () => {
             });
         }
 
+        // Smart sorting for demos: Sort by transaction count (most active mills first)
+        if (!sortConfig) {
+            result.sort((a, b) => {
+                const aTransactions = a.transactions?.length || 0;
+                const bTransactions = b.transactions?.length || 0;
+                if (bTransactions !== aTransactions) {
+                    return bTransactions - aTransactions;
+                }
+                // Secondary sort by region for consistency
+                return (a.region || '').localeCompare(b.region || '');
+            });
+        }
+
         return result;
     }, [enrichedMills, activeScenario, activeTab, searchQuery, filters, selectedFacility, sortConfig]);
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredMills.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedMills = useMemo(() => {
+        return filteredMills.slice(startIndex, endIndex);
+    }, [filteredMills, startIndex, endIndex]);
+
+    // Reset to page 1 when filters/search change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, filters, activeTab, activeScenario, selectedFacility]);
 
     const filteredStatistics = useMemo(() => {
         const totalCapacity = filteredMills.reduce((sum, m) => sum + (m.capacity_ton_per_hour || 0), 0);
@@ -2339,7 +2422,7 @@ const App = () => {
                 className="w-full px-3 py-2 text-sm text-gray-900 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
               >
                 <option value="all">All Mills (no facility filter)</option>
-                {DEMO_FACILITIES.map(facility => (
+                {facilities.map(facility => (
                   <option key={facility.facility_id} value={facility.code}>
                     {facility.code} ({facility.facility_name})
                   </option>
@@ -2631,7 +2714,7 @@ const App = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredMills.map(mill => (
+                {paginatedMills.map(mill => (
                   <tr key={mill.mill_id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="flex items-start space-x-3">
@@ -2763,16 +2846,124 @@ const App = () => {
             </table>
           </div>
 
+          {/* Pagination Footer */}
           <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-            <p className="text-xs text-gray-600">
-              Showing {filteredMills.length} of {statistics.total} mills
-            </p>
+            <div className="flex items-center justify-between">
+              {/* Left: Showing info */}
+              <div className="flex items-center space-x-2">
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(endIndex, filteredMills.length)}</span> of{' '}
+                  <span className="font-medium">{filteredMills.length}</span> mills
+                </p>
+              </div>
+
+              {/* Center: Page navigation */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    currentPage === 1
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  ← Previous
+                </button>
+
+                {/* Page numbers */}
+                <div className="flex items-center space-x-1">
+                  {[...Array(Math.min(7, totalPages))].map((_, idx) => {
+                    let pageNum: number;
+                    if (totalPages <= 7) {
+                      pageNum = idx + 1;
+                    } else if (currentPage <= 4) {
+                      pageNum = idx + 1;
+                    } else if (currentPage >= totalPages - 3) {
+                      pageNum = totalPages - 6 + idx;
+                    } else {
+                      pageNum = currentPage - 3 + idx;
+                    }
+
+                    if (pageNum > totalPages) return null;
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 text-sm rounded-md ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  {totalPages > 7 && currentPage < totalPages - 3 && (
+                    <>
+                      <span className="px-2 text-gray-500">...</span>
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        className="px-3 py-1 text-sm rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    currentPage === totalPages
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Next →
+                </button>
+              </div>
+
+              {/* Right: Items per page */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-gray-600">Per page:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"
+                >
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         )}
       </div>
             </div>
         )
+    }
+
+    // Show loading state while data is being fetched
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <RefreshCw className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Mill Data...</h2>
+                    <p className="text-gray-600">Fetching 1,449 mills from database</p>
+                </div>
+            </div>
+        );
     }
 
     if (view === 'detail' && selectedMill) {
