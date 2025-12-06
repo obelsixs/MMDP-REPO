@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, AlertTriangle, CheckCircle, XCircle, Calendar, Users, MapPin, FileText, ExternalLink, Upload, TrendingUp, Package, Navigation, Database, Activity, RefreshCw, Send, Clock, Award, Star, Bell, ArrowRight, CheckSquare, Factory, Droplet, Eye, RotateCcw, ChevronDown, ChevronRight, Settings, FileUp, ArrowLeft, View, Pencil, Trash2, Landmark, Wheat, Building, Target, UserCheck, ShieldAlert, Info, Scale, UploadCloud, Plus } from 'lucide-react';
+import { Search, Filter, AlertTriangle, CheckCircle, XCircle, Calendar, Users, MapPin, FileText, ExternalLink, Upload, TrendingUp, Package, Database, Activity, RefreshCw, Send, Clock, Award, Star, Bell, ArrowRight, CheckSquare, Factory, Droplet, Eye, RotateCcw, ChevronDown, ChevronRight, Settings, FileUp, ArrowLeft, View, Pencil, Trash2, Landmark, Wheat, Building, Target, UserCheck, ShieldAlert, Info, Scale, UploadCloud, Plus } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
 
@@ -33,9 +33,10 @@ interface AsanaWorkflowStep {
     color: string;
 }
 
-type EvaluationStatus = 'Eligible' | 'Not Eligible (NBL)' | 'Under Evaluation' | 'Not Evaluated';
+type EvaluationStatus = 'Evaluated' | 'Under Evaluation' | 'Not Evaluated';
+type EligibilityStatus = 'Eligible' | 'Not Eligible' | undefined;
 type RiskLevel = 'Low' | 'Medium' | 'High' | null;
-type SourcingStatus = 'Delivering' | 'Progressing' | 'Commitment & Starting Action' | 'Awareness' | 'Known' | 'Unknown';
+type IRFStatus = 'Delivering' | 'Progressing' | 'Commitment' | 'Starting' | 'Awareness' | 'Unknown';
 
 
 interface Mill {
@@ -54,8 +55,10 @@ interface Mill {
     current_evaluation_id: string | null;
     last_updated: string | null;
     risk_level: RiskLevel;
-    sourcing_status: SourcingStatus;
-    sourcing_status_last_updated?: string;
+    irf_status: IRFStatus;
+    irf_status_last_updated?: string;
+    ttp: number;
+    vdf: number | null;
     nbl_flag: boolean;
     nbl_reason?: string;
     nbl_date_added?: string;
@@ -113,16 +116,20 @@ interface EnrichedMill extends Mill {
 interface Filters {
     region: string;
     owner: string;
+    group: string;
     risk: string;
     buyer: string;
     product: string;
-    sourcingStatus: string;
+    irfStatus: string;
+    distance: string;
+    evaluationStatus: string;
+    eligibilityStatus: string;
 }
 
 interface UploadData {
     recommendation?: 'Yes' | 'No';
     risk_level?: RiskLevel;
-    sourcing_status?: SourcingStatus;
+    irf_status?: IRFStatus;
     capacity_ton_per_hour?: number;
     traceability_level?: string;
     ndpe_violation_found?: boolean;
@@ -152,7 +159,7 @@ const DEMO_MILLS: Mill[] = [
     island: "Sumatra",
     latitude: -1.6101,
     longitude: 103.6131,
-    evaluation_status: "Eligible",
+    evaluation_status: "Evaluated",
     current_evaluation_id: "EVAL2024_001",
     last_updated: "2024-06-15",
     risk_level: "Low",
@@ -195,7 +202,7 @@ const DEMO_MILLS: Mill[] = [
     island: "Kalimantan",
     latitude: -0.5024,
     longitude: 117.1536,
-    evaluation_status: "Eligible",
+    evaluation_status: "Evaluated",
     current_evaluation_id: "EVAL2024_003",
     last_updated: "2024-09-10",
     risk_level: "Low",
@@ -238,7 +245,7 @@ const DEMO_MILLS: Mill[] = [
     island: "Sumatra",
     latitude: -1.4852,
     longitude: 103.3838,
-    evaluation_status: "Eligible",
+    evaluation_status: "Evaluated",
     current_evaluation_id: "EVAL2024_005",
     last_updated: "2024-07-30",
     risk_level: "Low",
@@ -281,7 +288,7 @@ const DEMO_MILLS: Mill[] = [
     island: "Sumatra",
     latitude: -2.3307,
     longitude: 99.8453,
-    evaluation_status: "Eligible",
+    evaluation_status: "Evaluated",
     current_evaluation_id: "EVAL2023_009",
     last_updated: "2023-08-15",
     risk_level: "Low",
@@ -316,7 +323,7 @@ const DEMO_MILLS: Mill[] = [
     island: "Sumatra",
     latitude: -1.5200,
     longitude: 103.4500,
-    evaluation_status: "Eligible",
+    evaluation_status: "Evaluated",
     current_evaluation_id: "EVAL2024_010",
     last_updated: "2024-11-20",
     risk_level: "Low",
@@ -570,10 +577,10 @@ const DEMO_MILLS: Mill[] = [
 ];
 
 const DEMO_TRANSACTIONS: Transaction[] = [
-  // Forest Green Palm Mill - GAR + APC
+  // Forest Green Palm Mill - GAR + APC (competitor)
   { mill_id: "PO1000001", buyer_entity: "GAR Trading", buyer_type: "gar", product_type: "CPO", last_verified: "2025-10-20" },
   { mill_id: "PO1000001", buyer_entity: "GAR Trading", buyer_type: "gar", product_type: "PK", last_verified: "2025-10-20" },
-  { mill_id: "PO1000001", buyer_entity: "APC", buyer_type: "gar", product_type: "CPO", last_verified: "2025-10-23" },
+  { mill_id: "PO1000001", buyer_entity: "APC", buyer_type: "competitor", product_type: "CPO", last_verified: "2025-10-23" },
   
   // Sumatra Agri Mill (NBL) - Wilmar competitor
   { mill_id: "PO1000002", buyer_entity: "Wilmar International", buyer_type: "competitor", product_type: "CPO", last_verified: "2025-09-20" },
@@ -585,21 +592,21 @@ const DEMO_TRANSACTIONS: Transaction[] = [
   
   // Palm Valley Processing - Under evaluation (no transactions yet)
   
-  // East Coast Palm Solutions - GAR + PHG
+  // East Coast Palm Solutions - GAR + PHG (competitor)
   { mill_id: "PO1000005", buyer_entity: "GAR Trading", buyer_type: "gar", product_type: "CPO", last_verified: "2025-10-12" },
-  { mill_id: "PO1000005", buyer_entity: "PHG", buyer_type: "gar", product_type: "PK", last_verified: "2025-10-10" },
-  { mill_id: "PO1000005", buyer_entity: "PHG", buyer_type: "gar", product_type: "CPO", last_verified: "2025-10-10" },
+  { mill_id: "PO1000005", buyer_entity: "PHG", buyer_type: "competitor", product_type: "PK", last_verified: "2025-10-10" },
+  { mill_id: "PO1000005", buyer_entity: "PHG", buyer_type: "competitor", product_type: "CPO", last_verified: "2025-10-10" },
   
   // Northern Territory Mill (NBL) - Wilmar
   { mill_id: "PO1000006", buyer_entity: "Wilmar International", buyer_type: "competitor", product_type: "CPO", last_verified: "2025-10-01" },
   
   // Riau Central Mill - Multiple buyers
   { mill_id: "PO1000009", buyer_entity: "GAR Trading", buyer_type: "gar", product_type: "CPO", last_verified: "2024-08-10" },
-  { mill_id: "PO1000009", buyer_entity: "APC", buyer_type: "gar", product_type: "PK", last_verified: "2024-08-05" },
+  { mill_id: "PO1000009", buyer_entity: "APC", buyer_type: "competitor", product_type: "PK", last_verified: "2024-08-05" },
   
-  // Jambi Delta Mill - GAR + SDG
+  // Jambi Delta Mill - GAR + SDG (competitor)
   { mill_id: "PO1000010", buyer_entity: "GAR Trading", buyer_type: "gar", product_type: "CPO", last_verified: "2025-10-15" },
-  { mill_id: "PO1000010", buyer_entity: "SDG", buyer_type: "gar", product_type: "PK", last_verified: "2025-10-14" },
+  { mill_id: "PO1000010", buyer_entity: "SDG", buyer_type: "competitor", product_type: "PK", last_verified: "2025-10-14" },
   
   // Under Review Mill Gamma - No transactions yet
   
@@ -614,9 +621,9 @@ const DEMO_TRANSACTIONS: Transaction[] = [
 ];
 
 const DEMO_FACILITIES: Facility[] = [
-  { facility_id: "FAC001", facility_name: "GAR Jambi Refinery", type: "Refinery", region: "Jambi", code: "Libo" },
-  { facility_id: "FAC002", facility_name: "GAR Riau Processing", type: "Processing Plant", region: "Riau", code: "Lubuk Gaung" },
-  { facility_id: "FAC003", facility_name: "GAR Kalimantan Hub", type: "Distribution Hub", region: "Kalimantan", code: "Dumai" }
+  { facility_id: "FAC001", facility_name: "Libo", type: "Refinery", region: "Jambi", code: "LIB" },
+  { facility_id: "FAC002", facility_name: "Lubuk Gaung", type: "Processing Plant", region: "Riau", code: "LUB" },
+  { facility_id: "FAC003", facility_name: "Dumai", type: "Distribution Hub", region: "Kalimantan", code: "DUM" }
 ];
 
 // Mill-to-Facility Distance Data (each mill has distances to all facilities, ranked)
@@ -708,10 +715,14 @@ const App = () => {
     const [filters, setFilters] = useState<Filters>({
         region: 'all',
         owner: 'all',
+        group: 'all',
         risk: 'all',
         buyer: 'all',
         product: 'all',
-        sourcingStatus: 'all',
+        irfStatus: 'all',
+        distance: 'all',
+        evaluationStatus: 'all',
+        eligibilityStatus: 'all',
     });
     
     // State for interactive KPI cards
@@ -774,7 +785,7 @@ const App = () => {
                 setTransactions(transactionsData);
                 setDistances(distancesData);
 
-                console.log(`✅ Loaded ${millsData.length} mills, ${facilitiesData.length} facilities, ${transactionsData.length} transactions`);
+                console.log(`✅ Loaded ${millsData.length} mills, ${facilitiesData.length} facilities, ${distancesData.length} distances, ${transactionsData.length} transactions`);
             } catch (error) {
                 console.error('❌ Error loading data:', error);
                 // Fallback to demo data if JSON loading fails
@@ -807,6 +818,16 @@ const App = () => {
 
     // Enhanced mills with computed properties
     const enrichedMills: EnrichedMill[] = useMemo(() => {
+        // Debug log distances state on first render
+        if (mills.length > 0) {
+            console.log('🔍 Enrichment Debug:', {
+                totalDistancesInState: distances.length,
+                millCount: mills.length,
+                firstMillId: mills[0]?.mill_id,
+                distancesForFirstMill: distances.filter(d => d.mill_id === mills[0]?.mill_id).length
+            });
+        }
+
         return mills.map(mill => {
         const millTransactions = transactions.filter(t => t.mill_id === mill.mill_id);
 
@@ -858,7 +879,7 @@ const App = () => {
 
     const statistics = useMemo(() => {
         const total = enrichedMills.length;
-        const eligible = enrichedMills.filter(m => m.evaluation_status === 'Eligible').length;
+        const eligible = enrichedMills.filter(m => m.evaluation_status === 'Evaluated').length;
         const underEvaluation = enrichedMills.filter(m => m.evaluation_status === 'Under Evaluation').length;
         const inNBL = enrichedMills.filter(m => m.nbl_flag).length;
         const notEvaluated = enrichedMills.filter(m => m.evaluation_status === 'Not Evaluated').length;
@@ -867,8 +888,8 @@ const App = () => {
     }, [enrichedMills]);
     
     const summaryKpis = useMemo(() => {
-        const deliveringCount = enrichedMills.filter(m => m.sourcing_status === 'Delivering').length;
-        const atRiskCount = enrichedMills.filter(m => m.risk_level === 'High').length;
+        const deliveringCount = enrichedMills.filter(m => m.irf_status === 'Delivering').length;
+        const atRiskCount = enrichedMills.filter(m => m.risk_level === 'Medium').length;
         const total = enrichedMills.length;
         const deliveringPercentage = total > 0 ? Math.round((deliveringCount / total) * 100) : 0;
         return {
@@ -881,9 +902,9 @@ const App = () => {
     const handleClearKpiFilter = () => {
         if (activeKpiFilter) {
             if (activeKpiFilter === 'eligible') setActiveTab('all');
-            if (activeKpiFilter === 'delivering') setFilters(f => ({ ...f, sourcingStatus: 'all' }));
+            if (activeKpiFilter === 'delivering') setFilters(f => ({ ...f, irfStatus: 'all' }));
             if (activeKpiFilter === 'at-risk') setFilters(f => ({ ...f, risk: 'all' }));
-            if (activeKpiFilter === 'capacity' || activeKpiFilter === 'distance') setSortConfig(null);
+            if (activeKpiFilter === 'capacity') setSortConfig(null);
         }
         setActiveKpiFilter(null);
     };
@@ -903,16 +924,13 @@ const App = () => {
                 setActiveTab('eligible');
                 break;
             case 'delivering':
-                setFilters(f => ({ ...f, sourcingStatus: 'Delivering' }));
+                setFilters(f => ({ ...f, irfStatus: 'Delivering' }));
                 break;
             case 'at-risk':
-                setFilters(f => ({ ...f, risk: 'High' }));
+                setFilters(f => ({ ...f, risk: 'Medium' }));
                 break;
             case 'capacity':
                 setSortConfig({ key: 'capacity_ton_per_hour', direction: 'desc' });
-                break;
-            case 'distance':
-                setSortConfig({ key: 'distance', direction: 'asc' });
                 break;
         }
     };
@@ -925,6 +943,12 @@ const App = () => {
         if (activeScenario === 'competitor-check') {
             // Competitor Check: Show only mills with competitor transactions
             result = result.filter(mill => mill.hasCompetitor);
+        } else if (activeScenario === 'potential-supplier') {
+            // Potential Supplier: Show only mills with NO GAR transactions AND Eligible status
+            result = result.filter(mill => {
+                const garTransactions = mill.transactions.filter(t => t.buyer_type === 'gar');
+                return garTransactions.length === 0 && mill.eligibility_status === 'Eligible';
+            });
         } else if (activeScenario !== 'all' && activeScenario !== 'regional-supply' && activeScenario !== 'facility-driven') {
             // Other scenarios: Filter by scenario_tags
             result = result.filter(mill => mill.scenario_tags?.includes(activeScenario));
@@ -932,7 +956,7 @@ const App = () => {
 
         // Apply tab filters
         if (activeTab === 'eligible') {
-            result = result.filter(m => m.evaluation_status === 'Eligible');
+            result = result.filter(m => m.evaluation_status === 'Evaluated');
         } else if (activeTab === 'under-evaluation') {
             result = result.filter(m => m.evaluation_status === 'Under Evaluation');
         } else if (activeTab === 'nbl') {
@@ -947,18 +971,41 @@ const App = () => {
         );
         }
 
-        // Apply region/owner/risk filters
+        // Apply region/owner/group/risk filters
         if (filters.region !== 'all') {
         result = result.filter(mill => mill.region === filters.region);
         }
         if (filters.owner !== 'all') {
         result = result.filter(mill => mill.parent_group === filters.owner);
         }
+        if (filters.group !== 'all') {
+        result = result.filter(mill => mill.group === filters.group);
+        }
         if (filters.risk !== 'all') {
         result = result.filter(mill => mill.risk_level === filters.risk);
         }
-        if (filters.sourcingStatus !== 'all') {
-            result = result.filter(mill => mill.sourcing_status === filters.sourcingStatus);
+        if (filters.irfStatus !== 'all') {
+            result = result.filter(mill => mill.irf_status === filters.irfStatus);
+        }
+        if (filters.evaluationStatus !== 'all') {
+            result = result.filter(mill => mill.evaluation_status === filters.evaluationStatus);
+        }
+        if (filters.eligibilityStatus !== 'all') {
+            result = result.filter(mill => mill.eligibility_status === filters.eligibilityStatus);
+        }
+
+        // Apply distance filter
+        if (filters.distance !== 'all') {
+            result = result.filter(mill => {
+                const distance = mill.nearestFacilityDistance;
+                switch (filters.distance) {
+                    case 'near': return distance < 50;
+                    case 'medium': return distance >= 50 && distance < 100;
+                    case 'far': return distance >= 100 && distance < 200;
+                    case 'very-far': return distance >= 200;
+                    default: return true;
+                }
+            });
         }
 
         // Apply buyer filter
@@ -983,17 +1030,52 @@ const App = () => {
         );
         }
 
-        // Facility-driven mode: Add distance and sort, but apply AFTER other filters
+        // Facility-driven mode: Filter mills that have distance data for selected facility, add distance and sort
         if (activeScenario === 'facility-driven' && selectedFacility !== 'all') {
-            result = result.map(mill => {
-            const facilityData = mill.facilityDistances.find(f => f.facility_name === selectedFacility);
-            return {
-                ...mill,
-                distanceToSelectedFacility: facilityData?.distance_km || Infinity
-            };
+            console.log('🏭 Facility-Driven Filter Active:', {
+                selectedFacility,
+                totalDistances: distances.length,
+                selectedFacilityDistances: distances.filter(d => d.facility_id === selectedFacility).length,
+                millsBeforeFilter: result.length
             });
-            // Sort by distance to selected facility
-            result.sort((a, b) => (a as any).distanceToSelectedFacility - (b as any).distanceToSelectedFacility);
+
+            // Filter to only mills that have a distance to this facility
+            result = result
+                .map(mill => {
+                    // Look up distance directly from distances state using facility_id
+                    const facilityData = distances.find(d =>
+                        d.mill_id === mill.mill_id &&
+                        d.facility_id === selectedFacility
+                    );
+
+                    return {
+                        ...mill,
+                        distanceToSelectedFacility: facilityData?.distance_km,
+                        selectedFacilityName: facilityData?.facility_name,
+                        hasFacilityDistance: !!facilityData
+                    };
+                })
+                .filter(mill => (mill as any).hasFacilityDistance) // Only show mills with distance data
+                .sort((a, b) => (a as any).distanceToSelectedFacility - (b as any).distanceToSelectedFacility);
+
+            console.log('✅ Mills after facility filter:', result.length);
+        }
+
+        // Potential Supplier Priority Sorting: Major competitors to bottom
+        if (activeScenario === 'potential-supplier') {
+            const LOW_PRIORITY_COMPETITORS = ['Wilmar International', 'Musim Mas', 'Asian Agri'];
+
+            result.sort((a, b) => {
+                const aIsLowPriority = LOW_PRIORITY_COMPETITORS.includes(a.parent_group);
+                const bIsLowPriority = LOW_PRIORITY_COMPETITORS.includes(b.parent_group);
+
+                // Low priority mills sink to bottom
+                if (aIsLowPriority && !bIsLowPriority) return 1;  // a goes down
+                if (!aIsLowPriority && bIsLowPriority) return -1; // b goes down
+
+                // Same priority level → maintain existing order
+                return 0;
+            });
         }
 
         if (sortConfig) {
@@ -1019,7 +1101,8 @@ const App = () => {
         }
 
         // Smart sorting for demos: Sort by transaction count (most active mills first)
-        if (!sortConfig) {
+        // BUT: Skip this for facility-driven mode (already sorted by distance)
+        if (!sortConfig && !(activeScenario === 'facility-driven' && selectedFacility !== 'all')) {
             result.sort((a, b) => {
                 const aTransactions = a.transactions?.length || 0;
                 const bTransactions = b.transactions?.length || 0;
@@ -1032,7 +1115,7 @@ const App = () => {
         }
 
         return result;
-    }, [enrichedMills, activeScenario, activeTab, searchQuery, filters, selectedFacility, sortConfig]);
+    }, [enrichedMills, activeScenario, activeTab, searchQuery, filters, selectedFacility, sortConfig, distances]);
 
     // Pagination logic
     const totalPages = Math.ceil(filteredMills.length / itemsPerPage);
@@ -1049,9 +1132,7 @@ const App = () => {
 
     const filteredStatistics = useMemo(() => {
         const totalCapacity = filteredMills.reduce((sum, m) => sum + (m.capacity_ton_per_hour || 0), 0);
-        const totalDistance = filteredMills.reduce((sum, m) => sum + m.nearestFacilityDistance, 0);
-        const avgDistance = filteredMills.length > 0 ? totalDistance / filteredMills.length : 0;
-        return { totalCapacity, avgDistance };
+        return { totalCapacity };
     }, [filteredMills]);
 
     const scenarios = [
@@ -1063,10 +1144,10 @@ const App = () => {
         color: 'blue'
         },
         {
-        id: 'new-supplier',
+        id: 'potential-supplier',
         icon: Package,
-        title: 'New Supplier',
-        description: 'Not evaluated mills for onboarding workflow',
+        title: 'Potential Supplier',
+        description: 'Eligible mills with no GAR transaction history (sorted by priority)',
         color: 'green'
         },
         {
@@ -1119,11 +1200,13 @@ const App = () => {
         
         const updatedMills = mills.map(m => {
             if (m.mill_id === uploadMill.mill_id) {
-                const newStatus: EvaluationStatus = uploadData.recommendation === 'Yes' && !uploadData.ndpe_violation_found && !uploadData.public_grievance_flag ? 'Eligible' : 'Not Eligible (NBL)';
+                const newStatus: EvaluationStatus = uploadData.recommendation === 'Yes' && !uploadData.ndpe_violation_found && !uploadData.public_grievance_flag ? 'Evaluated' : 'Not Evaluated';
+                const newEligibility: EligibilityStatus = uploadData.recommendation === 'Yes' && !uploadData.ndpe_violation_found && !uploadData.public_grievance_flag ? 'Eligible' : 'Not Eligible';
                 
                 const updatedMill: Mill = {
                     ...m,
                     evaluation_status: newStatus,
+                    eligibility_status: newEligibility,
                     current_evaluation_id: evalId,
                     last_updated: today,
                     risk_level: uploadData.risk_level || null,
@@ -1179,29 +1262,35 @@ const App = () => {
         setActiveTab('all');
         setSearchQuery('');
         setSelectedFacility('all');
-        setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all', sourcingStatus: 'all' });
+        setFilters({ region: 'all', owner: 'all', group: 'all', risk: 'all', buyer: 'all', product: 'all', irfStatus: 'all', distance: 'all', evaluationStatus: 'all', eligibilityStatus: 'all' });
         handleClearKpiFilter();
         showToast('Demo data reset successfully!', 'success');
     };
 
-    const getStatusBadgeColor = (status: EvaluationStatus | 'Not Eligible' | null) => {
+    const getStatusBadgeColor = (status: EvaluationStatus | null) => {
         const colors: {[key: string]: string} = {
-        'Eligible': 'bg-green-100 text-green-800 border-green-300',
+        'Evaluated': 'bg-green-100 text-green-800 border-green-300',
         'Under Evaluation': 'bg-orange-100 text-orange-800 border-orange-300',
-        'Not Eligible': 'bg-red-100 text-red-800 border-red-300',
-        'Not Eligible (NBL)': 'bg-red-100 text-red-800 border-red-400',
         'Not Evaluated': 'bg-gray-100 text-gray-800 border-gray-300',
         };
         return colors[status || ''] || 'bg-gray-100 text-gray-800 border-gray-300';
     };
 
-    const getSourcingStatusBadgeColor = (status: SourcingStatus) => {
-        const colors: { [key in SourcingStatus]: string } = {
+    const getEligibilityBadgeColor = (status: EligibilityStatus) => {
+        const colors: {[key: string]: string} = {
+        'Eligible': 'bg-green-100 text-green-800 border-green-300',
+        'Not Eligible': 'bg-red-100 text-red-800 border-red-300',
+        };
+        return colors[status || ''] || 'bg-gray-100 text-gray-800 border-gray-300';
+    };
+
+    const getIRFStatusBadgeColor = (status: IRFStatus) => {
+        const colors: { [key in IRFStatus]: string } = {
             'Delivering': 'bg-green-100 text-green-800 border-green-300',
             'Progressing': 'bg-blue-100 text-blue-800 border-blue-300',
-            'Commitment & Starting Action': 'bg-sky-100 text-sky-800 border-sky-300',
-            'Awareness': 'bg-purple-100 text-purple-800 border-purple-300',
-            'Known': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+            'Commitment': 'bg-orange-100 text-orange-800 border-orange-300',
+            'Starting': 'bg-purple-100 text-purple-800 border-purple-300',
+            'Awareness': 'bg-yellow-100 text-yellow-800 border-yellow-300',
             'Unknown': 'bg-gray-100 text-gray-800 border-gray-300',
         };
         return colors[status] || 'bg-gray-100 text-gray-800 border-gray-300';
@@ -1419,23 +1508,23 @@ const App = () => {
 
                     {(isEditMode || userRole === 'Sustainability Team') && (
                         <div className="p-4 rounded-lg border-2 border-gray-200 bg-gray-50">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Sourcing Status</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">IRF Status</label>
                             <select
-                                value={uploadData.sourcing_status || 'Unknown'}
-                                onChange={(e) => setUploadData({ ...uploadData, sourcing_status: e.target.value as SourcingStatus })}
+                                value={uploadData.irf_status || 'Unknown'}
+                                onChange={(e) => setUploadData({ ...uploadData, irf_status: e.target.value as IRFStatus })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 disabled={userRole !== 'Sustainability Team'}
                             >
                                 <option>Delivering</option>
                                 <option>Progressing</option>
-                                <option>Commitment & Starting Action</option>
+                                <option>Commitment</option>
+                                <option>Starting</option>
                                 <option>Awareness</option>
-                                <option>Known</option>
                                 <option>Unknown</option>
                             </select>
-                            {uploadMill?.sourcing_status_last_updated && (
+                            {uploadMill?.irf_status_last_updated && (
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Last updated: {uploadMill.sourcing_status_last_updated}
+                                    Last updated: {uploadMill.irf_status_last_updated}
                                 </p>
                             )}
                             {userRole !== 'Sustainability Team' && <p className="text-xs text-gray-500 mt-1">Only Sustainability Team can edit this field.</p>}
@@ -1572,7 +1661,7 @@ const App = () => {
                     
                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                         <p className="text-sm"><strong>Mill:</strong> {uploadMill.mill_name}</p>
-                        <p className="text-sm"><strong>Sourcing Status:</strong> {uploadData.sourcing_status}</p>
+                        <p className="text-sm"><strong>IRF Status:</strong> {uploadData.irf_status}</p>
                         <p className="text-sm"><strong>Capacity:</strong> {uploadData.capacity_ton_per_hour} T/H</p>
                         <p className="text-sm"><strong>Recommendation:</strong> {uploadData.recommendation}</p>
                         <p className="text-sm"><strong>Risk Level:</strong> {uploadData.risk_level}</p>
@@ -2414,30 +2503,30 @@ const App = () => {
           {activeScenario === 'facility-driven' && (
             <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
               <label className="block text-sm font-medium text-blue-900 mb-2">
-                🏭 Select Facility to see 3 nearest mills:
+                🏭 Select Facility to see nearest mills:
               </label>
               <select
                 value={selectedFacility}
                 onChange={(e) => setSelectedFacility(e.target.value)}
                 className="w-full px-3 py-2 text-sm text-gray-900 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                <option value="all">All Mills (no facility filter)</option>
+                <option value="all">Select Facility to see nearest mills</option>
                 {facilities.map(facility => (
-                  <option key={facility.facility_id} value={facility.code}>
-                    {facility.code} ({facility.facility_name})
+                  <option key={facility.facility_id} value={facility.facility_id}>
+                    {facility.code} - {facility.facility_name} ({facility.type})
                   </option>
                 ))}
               </select>
               {selectedFacility !== 'all' && (
                 <p className="mt-2 text-xs text-blue-700">
-                  ✓ Showing 3 nearest mills to <strong>{selectedFacility}</strong> facility, sorted by distance
+                  ✓ Showing nearest mills to <strong>{facilities.find(f => f.facility_id === selectedFacility)?.facility_name || selectedFacility}</strong> facility, sorted by distance
                 </p>
               )}
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-5 gap-3 mb-4">
+        <div className="grid grid-cols-4 gap-3 mb-4">
             <button
                 onClick={() => handleKpiClick('eligible')}
                 title="Click to show only eligible mills"
@@ -2480,22 +2569,8 @@ const App = () => {
                 </p>
             </button>
             <button
-                onClick={() => handleKpiClick('distance')}
-                title="Click to sort by distance (ascending)"
-                className={`bg-white rounded-lg shadow-sm border p-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeKpiFilter && activeKpiFilter !== 'distance' ? 'opacity-60 hover:opacity-100' : ''} ${activeKpiFilter === 'distance' ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2' : 'hover:border-gray-400'}`}
-            >
-                <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs text-gray-600">Avg. Distance</p>
-                    <Navigation className="w-4 h-4 text-gray-500" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900">
-                    {filteredStatistics.avgDistance.toFixed(1)}
-                    <span className="text-base font-medium text-gray-500"> km</span>
-                </p>
-            </button>
-            <button
                 onClick={() => handleKpiClick('at-risk')}
-                title="Click to show only high-risk mills"
+                title="Click to show only medium-risk mills"
                 className={`bg-white rounded-lg shadow-sm border p-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeKpiFilter && activeKpiFilter !== 'at-risk' ? 'opacity-60 hover:opacity-100' : ''} ${activeKpiFilter === 'at-risk' ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2' : 'hover:border-gray-400'}`}
             >
                 <div className="flex items-center justify-between mb-1">
@@ -2556,6 +2631,16 @@ const App = () => {
                 <option value="Sumatra">Sumatra</option>
               </select>
               <select
+                value={filters.group}
+                onChange={(e) => setFilters({...filters, group: e.target.value})}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Groups</option>
+                {[...new Set(enrichedMills.map(m => m.group).filter(Boolean))].sort().map(group => (
+                  <option key={group} value={group}>{group}</option>
+                ))}
+              </select>
+              <select
                 value={filters.buyer}
                 onChange={(e) => setFilters({...filters, buyer: e.target.value})}
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -2590,7 +2675,51 @@ const App = () => {
               >
                 <option value="all">All Risk</option>
                 <option value="Low">Low Risk</option>
+                <option value="Medium">Medium Risk</option>
                 <option value="High">High Risk</option>
+              </select>
+              <select
+                value={filters.irfStatus}
+                onChange={(e) => setFilters({...filters, irfStatus: e.target.value})}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All IRF Status</option>
+                <option value="Delivering">🟢 Delivering</option>
+                <option value="Progressing">🔵 Progressing</option>
+                <option value="Commitment">🟠 Commitment</option>
+                <option value="Starting">🟣 Starting</option>
+                <option value="Awareness">🟡 Awareness</option>
+                <option value="Unknown">⚪ Unknown</option>
+              </select>
+              <select
+                value={filters.distance}
+                onChange={(e) => setFilters({...filters, distance: e.target.value})}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Distances</option>
+                <option value="near">🟢 &lt; 50 km (Near)</option>
+                <option value="medium">🟡 50-100 km (Medium)</option>
+                <option value="far">🟠 100-200 km (Far)</option>
+                <option value="very-far">🔴 &gt; 200 km (Very Far)</option>
+              </select>
+              <select
+                value={filters.evaluationStatus}
+                onChange={(e) => setFilters({...filters, evaluationStatus: e.target.value})}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Evaluation Status</option>
+                <option value="Evaluated">✅ Evaluated</option>
+                <option value="Under Evaluation">🔄 Under Evaluation</option>
+                <option value="Not Evaluated">⚪ Not Evaluated</option>
+              </select>
+              <select
+                value={filters.eligibilityStatus}
+                onChange={(e) => setFilters({...filters, eligibilityStatus: e.target.value})}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Eligibility Status</option>
+                <option value="Eligible">✅ Eligible</option>
+                <option value="Not Eligible">❌ Not Eligible</option>
               </select>
             </div>
             
@@ -2607,7 +2736,7 @@ const App = () => {
               </div>
             )}
             
-            {(activeKpiFilter || filters.buyer !== 'all' || filters.product !== 'all' || filters.region !== 'all' || filters.risk !== 'all' || filters.sourcingStatus !== 'all') && (
+            {(activeKpiFilter || filters.buyer !== 'all' || filters.product !== 'all' || filters.region !== 'all' || filters.risk !== 'all' || filters.irfStatus !== 'all' || filters.distance !== 'all') && (
               <div className="mt-3 flex items-center flex-wrap gap-2">
                 <span className="text-xs text-gray-600">Active filters:</span>
                 {activeKpiFilter && (
@@ -2666,12 +2795,23 @@ const App = () => {
                     </button>
                   </span>
                 )}
-                 {filters.sourcingStatus !== 'all' && !activeKpiFilter && (
+                 {filters.irfStatus !== 'all' && !activeKpiFilter && (
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-cyan-100 text-cyan-800 border border-cyan-300">
-                    Sourcing Status: {filters.sourcingStatus}
-                    <button 
-                      onClick={() => setFilters({...filters, sourcingStatus: 'all'})}
+                    IRF Status: {filters.irfStatus}
+                    <button
+                      onClick={() => setFilters({...filters, irfStatus: 'all'})}
                       className="ml-1 hover:text-cyan-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {filters.distance !== 'all' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-teal-100 text-teal-800 border border-teal-300">
+                    Distance: {filters.distance === 'near' ? '< 50 km' : filters.distance === 'medium' ? '50-100 km' : filters.distance === 'far' ? '100-200 km' : '> 200 km'}
+                    <button
+                      onClick={() => setFilters({...filters, distance: 'all'})}
+                      className="ml-1 hover:text-teal-900"
                     >
                       ×
                     </button>
@@ -2679,7 +2819,7 @@ const App = () => {
                 )}
                 <button
                   onClick={() => {
-                    setFilters({ region: 'all', owner: 'all', risk: 'all', buyer: 'all', product: 'all', sourcingStatus: 'all' });
+                    setFilters({ region: 'all', owner: 'all', group: 'all', risk: 'all', buyer: 'all', product: 'all', irfStatus: 'all', distance: 'all', evaluationStatus: 'all', eligibilityStatus: 'all' });
                     handleClearKpiFilter();
                   }}
                   className="text-xs text-gray-600 hover:text-gray-900 underline"
@@ -2703,13 +2843,31 @@ const App = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Region</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sourcing Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IRF Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">TTP</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">VDF</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facility</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Distance</th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    onClick={() => setSortConfig(prev => ({
+                      key: 'distance',
+                      direction: prev?.key === 'distance' && prev.direction === 'asc' ? 'desc' : 'asc'
+                    }))}
+                  >
+                    Distance {sortConfig?.key === 'distance' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Updated</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity (T/H)</th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    onClick={() => setSortConfig(prev => ({
+                      key: 'capacity_ton_per_hour',
+                      direction: prev?.key === 'capacity_ton_per_hour' && prev.direction === 'asc' ? 'desc' : 'asc'
+                    }))}
+                  >
+                    Capacity (T/H) {sortConfig?.key === 'capacity_ton_per_hour' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
@@ -2719,10 +2877,13 @@ const App = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-start space-x-3">
                         <div className="flex-1">
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-900 mr-2">{mill.mill_name}</span>
+                          <div className="flex items-center flex-wrap gap-2">
+                            <span className="text-sm font-medium text-gray-900">{mill.mill_name}</span>
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeColor(mill.evaluation_status)}`}>
                               {mill.evaluation_status}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getEligibilityBadgeColor(mill.eligibility_status)}`}>
+                              {mill.eligibility_status}
                             </span>
                           </div>
                           <div className="text-xs text-gray-500">{mill.mill_id}</div>
@@ -2734,11 +2895,17 @@ const App = () => {
                     <td className="px-4 py-3 text-sm text-gray-700">{mill.company || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{mill.region}</td>
                      <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getSourcingStatusBadgeColor(mill.sourcing_status)}`}>
-                        {mill.sourcing_status}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getIRFStatusBadgeColor(mill.irf_status)}`}>
+                        {mill.irf_status}
                       </span>
                     </td>
-                    <td 
+                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      {mill.ttp}%
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      {mill.vdf !== null && mill.vdf !== undefined ? `${mill.vdf}%` : ''}
+                    </td>
+                    <td
                       className="px-4 py-3 text-sm relative cursor-pointer"
                       onMouseEnter={(e) => handleBuyerHover(e, mill)}
                       onMouseLeave={handleBuyerLeave}
@@ -2753,14 +2920,16 @@ const App = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
-                      {activeScenario === 'facility-driven' && selectedFacility !== 'all' 
-                        ? selectedFacility 
+                      {activeScenario === 'facility-driven' && selectedFacility !== 'all'
+                        ? (mill as any).selectedFacilityName || mill.nearestFacilityName
                         : mill.nearestFacilityName}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
-                      {activeScenario === 'facility-driven' && selectedFacility !== 'all' 
-                        ? `${(mill as any).distanceToSelectedFacility?.toFixed(1) || 'N/A'} km`
-                        : `${mill.nearestFacilityDistance} km`}
+                      {activeScenario === 'facility-driven' && selectedFacility !== 'all'
+                        ? (typeof (mill as any).distanceToSelectedFacility === 'number'
+                            ? `${(mill as any).distanceToSelectedFacility.toFixed(2)} km`
+                            : 'N/A')
+                        : `${mill.nearestFacilityDistance.toFixed(1)} km`}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
                         {mill.last_updated || 'N/A'}
@@ -3250,8 +3419,8 @@ const App = () => {
                     <h2 className="text-base font-semibold text-gray-900 mb-3">Quick Stats</h2>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                          <span className="text-gray-600">Sourcing Status</span>
-                          <span className="font-medium text-gray-900">{selectedMill.sourcing_status || 'Unknown'}</span>
+                          <span className="text-gray-600">IRF Status</span>
+                          <span className="font-medium text-gray-900">{selectedMill.irf_status || 'Unknown'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Engagement</span>
