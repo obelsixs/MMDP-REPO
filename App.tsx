@@ -2608,8 +2608,8 @@ const App = () => {
 
         <div className="bg-white rounded-lg shadow-sm border mb-4">
           <div className="p-3">
-            <div className="flex items-center space-x-3">
-              <div className="relative flex-1">
+            <div className="flex items-center flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[250px]">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
@@ -2622,7 +2622,7 @@ const App = () => {
               <select
                 value={filters.region}
                 onChange={(e) => setFilters({...filters, region: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[140px]"
               >
                 <option value="all">All Regions</option>
                 <option value="Jambi">Jambi</option>
@@ -2633,7 +2633,7 @@ const App = () => {
               <select
                 value={filters.group}
                 onChange={(e) => setFilters({...filters, group: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[140px]"
               >
                 <option value="all">All Groups</option>
                 {[...new Set(enrichedMills.map(m => m.group).filter(Boolean))].sort().map(group => (
@@ -2643,7 +2643,7 @@ const App = () => {
               <select
                 value={filters.buyer}
                 onChange={(e) => setFilters({...filters, buyer: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[140px]"
               >
                 <option value="all">All Buyers</option>
                 <option value="gar-only">🟢 GAR Entities Only</option>
@@ -2661,7 +2661,7 @@ const App = () => {
               <select
                 value={filters.product}
                 onChange={(e) => setFilters({...filters, product: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[140px]"
                 title="CPO/PK shows all mills trading that product (even if they also trade other products)"
               >
                 <option value="all">All Products</option>
@@ -2671,7 +2671,7 @@ const App = () => {
               <select
                 value={filters.risk}
                 onChange={(e) => setFilters({...filters, risk: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[140px]"
               >
                 <option value="all">All Risk</option>
                 <option value="Low">Low Risk</option>
@@ -2681,7 +2681,7 @@ const App = () => {
               <select
                 value={filters.irfStatus}
                 onChange={(e) => setFilters({...filters, irfStatus: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[160px]"
               >
                 <option value="all">All IRF Status</option>
                 <option value="Delivering">🟢 Delivering</option>
@@ -2694,7 +2694,7 @@ const App = () => {
               <select
                 value={filters.distance}
                 onChange={(e) => setFilters({...filters, distance: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[150px]"
               >
                 <option value="all">All Distances</option>
                 <option value="near">🟢 &lt; 50 km (Near)</option>
@@ -2705,7 +2705,7 @@ const App = () => {
               <select
                 value={filters.evaluationStatus}
                 onChange={(e) => setFilters({...filters, evaluationStatus: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[180px]"
               >
                 <option value="all">All Evaluation Status</option>
                 <option value="Evaluated">✅ Evaluated</option>
@@ -2715,7 +2715,7 @@ const App = () => {
               <select
                 value={filters.eligibilityStatus}
                 onChange={(e) => setFilters({...filters, eligibilityStatus: e.target.value})}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[180px]"
               >
                 <option value="all">All Eligibility Status</option>
                 <option value="Eligible">✅ Eligible</option>
