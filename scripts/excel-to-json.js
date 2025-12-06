@@ -59,11 +59,26 @@ try {
     competitor_flag: mill.competitor_flag === true || mill.competitor_flag === 'true'
   }));
 
-  // Validate distances are numbers
-  const cleanedDistances = distances.map(d => ({
-    ...d,
-    distance_km: typeof d.distance_km === 'number' ? d.distance_km : parseFloat(d.distance_km)
-  }));
+  // No transformation needed for facilities - use as is from Excel
+  const cleanedFacilities = facilities;
+
+  // Create facility name to ID mapping for distances
+  const facilityNameToIdMap = {};
+  facilities.forEach(facility => {
+    if (!facilityNameToIdMap[facility.facility_name]) {
+      facilityNameToIdMap[facility.facility_name] = facility.facility_id;
+    }
+  });
+
+  // Add facility_id to distances and validate distance numbers
+  const cleanedDistances = distances.map(d => {
+    const facilityId = facilityNameToIdMap[d.facility_name];
+    return {
+      ...d,
+      distance_km: typeof d.distance_km === 'number' ? d.distance_km : parseFloat(d.distance_km),
+      facility_id: facilityId || d.facility_id // Add facility_id from mapping
+    };
+  });
 
   // ═══════════════════════════════════════════════════════════════
   // STEP 5: Write JSON files
@@ -79,10 +94,10 @@ try {
 
   writeFileSync(
     join(publicDataPath, 'facilities.json'),
-    JSON.stringify(facilities, null, 2),
+    JSON.stringify(cleanedFacilities, null, 2),
     'utf8'
   );
-  console.log(`   ✅ facilities.json (${facilities.length} records)`);
+  console.log(`   ✅ facilities.json (${cleanedFacilities.length} records)`);
 
   writeFileSync(
     join(publicDataPath, 'distances.json'),
