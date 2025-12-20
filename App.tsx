@@ -59,6 +59,7 @@ interface Mill {
     irf_status_last_updated?: string;
     ttp: number;
     vdf: number | null;
+    rspo_status?: string;
     nbl_flag: boolean;
     nbl_reason?: string;
     nbl_date_added?: string;
@@ -754,6 +755,7 @@ const App = () => {
 
     // State for data loading
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [facilities, setFacilities] = useState<Facility[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [distances, setDistances] = useState<MillFacilityDistance[]>([]);
@@ -763,38 +765,38 @@ const App = () => {
     const [itemsPerPage, setItemsPerPage] = useState(100);
 
     // Load data from JSON files
+    const loadData = async () => {
+        try {
+            setLoading(true);
+
+            const [millsRes, facilitiesRes, transactionsRes, distancesRes] = await Promise.all([
+                fetch('/data/mills.json'),
+                fetch('/data/facilities.json'),
+                fetch('/data/transactions.json'),
+                fetch('/data/distances.json')
+            ]);
+
+            const millsData = await millsRes.json();
+            const facilitiesData = await facilitiesRes.json();
+            const transactionsData = await transactionsRes.json();
+            const distancesData = await distancesRes.json();
+
+            setMills(millsData);
+            setFacilities(facilitiesData);
+            setTransactions(transactionsData);
+            setDistances(distancesData);
+
+            console.log(`✅ Loaded ${millsData.length} mills, ${facilitiesData.length} facilities, ${distancesData.length} distances, ${transactionsData.length} transactions`);
+        } catch (error) {
+            console.error('❌ Error loading data:', error);
+            // Fallback to demo data if JSON loading fails
+            setMills(DEMO_MILLS);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                setLoading(true);
-
-                const [millsRes, facilitiesRes, transactionsRes, distancesRes] = await Promise.all([
-                    fetch('/data/mills.json'),
-                    fetch('/data/facilities.json'),
-                    fetch('/data/transactions.json'),
-                    fetch('/data/distances.json')
-                ]);
-
-                const millsData = await millsRes.json();
-                const facilitiesData = await facilitiesRes.json();
-                const transactionsData = await transactionsRes.json();
-                const distancesData = await distancesRes.json();
-
-                setMills(millsData);
-                setFacilities(facilitiesData);
-                setTransactions(transactionsData);
-                setDistances(distancesData);
-
-                console.log(`✅ Loaded ${millsData.length} mills, ${facilitiesData.length} facilities, ${distancesData.length} distances, ${transactionsData.length} transactions`);
-            } catch (error) {
-                console.error('❌ Error loading data:', error);
-                // Fallback to demo data if JSON loading fails
-                setMills(DEMO_MILLS);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         loadData();
     }, []);
 
@@ -802,7 +804,152 @@ const App = () => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
     };
-    
+
+    // Refresh data function
+    const handleRefreshData = async () => {
+        try {
+            setRefreshing(true);
+            showToast('Refreshing data from Excel files...', 'success');
+
+            // Add cache-busting timestamp to force fresh data load
+            const timestamp = Date.now();
+            const [millsRes, facilitiesRes, transactionsRes, distancesRes] = await Promise.all([
+                fetch(`/data/mills.json?t=${timestamp}`),
+                fetch(`/data/facilities.json?t=${timestamp}`),
+                fetch(`/data/transactions.json?t=${timestamp}`),
+                fetch(`/data/distances.json?t=${timestamp}`)
+            ]);
+
+            const millsData = await millsRes.json();
+            const facilitiesData = await facilitiesRes.json();
+            const transactionsData = await transactionsRes.json();
+            const distancesData = await distancesRes.json();
+
+            setMills(millsData);
+            setFacilities(facilitiesData);
+            setTransactions(transactionsData);
+            setDistances(distancesData);
+
+            showToast(`Data refreshed! Loaded ${millsData.length} mills, ${facilitiesData.length} facilities`, 'success');
+            console.log(`✅ Refreshed ${millsData.length} mills, ${facilitiesData.length} facilities, ${distancesData.length} distances, ${transactionsData.length} transactions`);
+        } catch (error) {
+            console.error('❌ Refresh error:', error);
+            showToast('Failed to refresh data. Run "node scripts/excel-to-json.js" in terminal first.', 'error');
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    // Helper functions for Quick Fill Demo Data
+    const getRandomCoordinatesForRegion = (region: string): { lat: number; lng: number } => {
+        const regionCoordinates: Record<string, { lat: number; lng: number }[]> = {
+            'Sumatra': [
+                { lat: 3.5952, lng: 98.6722 },   // Medan area
+                { lat: 0.5071, lng: 101.4478 },  // Riau area
+                { lat: -0.9471, lng: 100.4172 }, // Padang area
+            ],
+            'Kalimantan': [
+                { lat: -0.0263, lng: 109.3425 }, // Pontianak area
+                { lat: -2.2118, lng: 113.9213 }, // Palangkaraya area
+                { lat: 0.5387, lng: 117.1385 },  // Samarinda area
+            ],
+            'Java': [
+                { lat: -6.2088, lng: 106.8456 }, // Jakarta area
+                { lat: -7.2575, lng: 112.7521 }, // Surabaya area
+            ],
+            'Sulawesi': [
+                { lat: -5.1477, lng: 119.4327 }, // Makassar area
+                { lat: 0.5357, lng: 123.0595 },  // Gorontalo area
+            ],
+            'Papua': [
+                { lat: -2.5920, lng: 140.6689 }, // Jayapura area
+            ]
+        };
+
+        const coords = regionCoordinates[region] || [{ lat: 0, lng: 101 }];
+        const baseCoord = coords[Math.floor(Math.random() * coords.length)];
+
+        // Add random offset ±0.3 degrees for variation
+        return {
+            lat: parseFloat((baseCoord.lat + (Math.random() - 0.5) * 0.6).toFixed(6)),
+            lng: parseFloat((baseCoord.lng + (Math.random() - 0.5) * 0.6).toFixed(6))
+        };
+    };
+
+    const generateMillId = (): string => {
+        const year = new Date().getFullYear();
+        const sequence = mills.length + 1;
+        return `MILL-${year}-${String(sequence).padStart(3, '0')}`;
+    };
+
+    const fillQuickDemoData = () => {
+        const demoCompanies = [
+            'PT Demo Plantation Alpha', 'PT Demo Agro Beta', 'PT Demo Mills Gamma',
+            'Demo Corporation Delta', 'Alpha Processing Mills', 'Beta Palm Oil'
+        ];
+        const demoGroups = [
+            'Demo Group Holdings', 'Alpha Agro Corporation', 'Beta Plantation Group',
+            'Gamma Palm Industries', 'Delta Mills Consortium'
+        ];
+        const regions = ['Sumatra', 'Kalimantan', 'Java', 'Sulawesi', 'Papua'];
+        const provinces = {
+            'Sumatra': ['Riau', 'North Sumatra', 'South Sumatra', 'Jambi', 'Aceh'],
+            'Kalimantan': ['East Kalimantan', 'West Kalimantan', 'Central Kalimantan', 'South Kalimantan'],
+            'Java': ['West Java', 'Central Java', 'East Java'],
+            'Sulawesi': ['South Sulawesi', 'Central Sulawesi', 'North Sulawesi'],
+            'Papua': ['Papua', 'West Papua']
+        };
+        const engagementLevels = ['High', 'Medium', 'Low'];
+        const riskLevels: RiskLevel[] = ['Low', 'Medium', 'High'];
+        const traceabilityLevels = ['High', 'Medium', 'Low'];
+        const rspoStatuses = ['IP', 'MB', 'IP, MB'];
+
+        // Select random region
+        const selectedRegion = regions[Math.floor(Math.random() * regions.length)];
+        const provinceList = provinces[selectedRegion] || ['Unknown Province'];
+        const selectedProvince = provinceList[Math.floor(Math.random() * provinceList.length)];
+
+        // Get random coordinates for region
+        const coordinates = getRandomCoordinatesForRegion(selectedRegion);
+
+        // Generate random capacity (30-100 TPH)
+        const capacity = Math.floor(Math.random() * (100 - 30 + 1)) + 30;
+
+        // Generate random FFB distribution that adds to 100%
+        const ownPct = Math.floor(Math.random() * 60) + 20;  // 20-80%
+        const plasmaPct = Math.floor(Math.random() * (100 - ownPct - 10)); // Leave at least 10% for independent
+        const independentPct = 100 - ownPct - plasmaPct;
+
+        const demoData = {
+            mill_id: generateMillId(),
+            mill_name: `${demoCompanies[Math.floor(Math.random() * demoCompanies.length)]} - ${Math.floor(Math.random() * 999) + 1}`,
+            parent_group: demoGroups[Math.floor(Math.random() * demoGroups.length)],
+            group_engagement: engagementLevels[Math.floor(Math.random() * engagementLevels.length)],
+            region: selectedRegion,
+            province_en: selectedProvince,
+            island: selectedRegion, // Auto-match island to region
+            latitude: coordinates.lat,
+            longitude: coordinates.lng,
+            capacity_ton_per_hour: capacity,
+            rspo_status: rspoStatuses[Math.floor(Math.random() * rspoStatuses.length)],
+            traceability_level: traceabilityLevels[Math.floor(Math.random() * traceabilityLevels.length)],
+            risk_level: riskLevels[Math.floor(Math.random() * riskLevels.length)],
+            ffb_source_own_pct: ownPct,
+            ffb_source_plasma_pct: plasmaPct,
+            ffb_source_independent_pct: independentPct,
+            ffb_source_comment: 'Demo data - auto-generated',
+            nbl_flag: Math.random() > 0.8, // 20% chance
+            ndpe_violation_found: Math.random() > 0.9, // 10% chance
+            public_grievance_flag: Math.random() > 0.85, // 15% chance
+            deforestation_alerts: Math.floor(Math.random() * 5),
+            hotspot_alerts: Math.floor(Math.random() * 10),
+            peat_presence: ['None', 'Low', 'Medium', 'High'][Math.floor(Math.random() * 4)]
+        };
+
+        setNewMillData(demoData);
+        showToast('✨ Demo data filled! Review and submit when ready.', 'success');
+    };
+
     // Handle buyer column hover
     const handleBuyerHover = (e: React.MouseEvent, mill: EnrichedMill) => {
         if (mill.buyerDetails && mill.buyerDetails.length > 0) {
@@ -877,13 +1024,36 @@ const App = () => {
         });
     }, [mills, transactions, distances]);
 
+    // Dynamic filter options extracted from actual data
+    const filterOptions = useMemo(() => {
+        const regions = [...new Set(enrichedMills.map(m => m.region).filter(Boolean))].sort();
+        const groups = [...new Set(enrichedMills.map(m => m.parent_group).filter(Boolean))].sort();
+        const buyers = [...new Set(enrichedMills.flatMap(m => m.buyerDetails.map(b => b.buyer)).filter(Boolean))].sort();
+        const products = [...new Set(enrichedMills.flatMap(m => m.transactions.map(t => t.product_type)).filter(Boolean))].sort();
+        const irfStatuses = [...new Set(enrichedMills.map(m => m.irf_status).filter(Boolean))].sort();
+        const riskLevels = [...new Set(enrichedMills.map(m => m.risk_level).filter(Boolean))].sort();
+        const evaluationStatuses = [...new Set(enrichedMills.map(m => m.evaluation_status).filter(Boolean))].sort();
+        const eligibilityStatuses = [...new Set(enrichedMills.map(m => m.eligibility_status).filter(Boolean))].sort();
+
+        return {
+            regions,
+            groups,
+            buyers,
+            products,
+            irfStatuses,
+            riskLevels,
+            evaluationStatuses,
+            eligibilityStatuses
+        };
+    }, [enrichedMills]);
+
     const statistics = useMemo(() => {
         const total = enrichedMills.length;
         const eligible = enrichedMills.filter(m => m.evaluation_status === 'Evaluated').length;
         const underEvaluation = enrichedMills.filter(m => m.evaluation_status === 'Under Evaluation').length;
         const inNBL = enrichedMills.filter(m => m.nbl_flag).length;
         const notEvaluated = enrichedMills.filter(m => m.evaluation_status === 'Not Evaluated').length;
-        
+
         return { total, eligible, underEvaluation, inNBL, notEvaluated };
     }, [enrichedMills]);
     
@@ -1823,16 +1993,26 @@ const App = () => {
                 <h2 className="text-xl font-bold text-gray-900">Add New Mill</h2>
                 <p className="text-sm text-gray-600 mt-1">Step {addMillStep} of 5</p>
               </div>
-              <button
-                onClick={() => {
-                  setAddMillModalOpen(false);
-                  setNewMillData({});
-                  setAddMillStep(1);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <XCircle className="w-6 h-6" />
-              </button>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={fillQuickDemoData}
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm"
+                  title="Auto-fill all fields with realistic demo data"
+                >
+                  <Star className="w-4 h-4 mr-1.5" />
+                  Quick Fill Demo Data
+                </button>
+                <button
+                  onClick={() => {
+                    setAddMillModalOpen(false);
+                    setNewMillData({});
+                    setAddMillStep(1);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* Progress Bar */}
@@ -1869,13 +2049,23 @@ const App = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Mill ID <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={newMillData.mill_id || ''}
-                      onChange={(e) => setNewMillData({ ...newMillData, mill_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., MILL-2025-001"
-                    />
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={newMillData.mill_id || ''}
+                        onChange={(e) => setNewMillData({ ...newMillData, mill_id: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., MILL-2025-001"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewMillData({ ...newMillData, mill_id: generateMillId() })}
+                        className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium whitespace-nowrap"
+                        title="Auto-generate Mill ID"
+                      >
+                        🔄 Generate
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1934,7 +2124,14 @@ const App = () => {
                     </label>
                     <select
                       value={newMillData.region || ''}
-                      onChange={(e) => setNewMillData({ ...newMillData, region: e.target.value })}
+                      onChange={(e) => {
+                        const selectedRegion = e.target.value;
+                        setNewMillData({
+                          ...newMillData,
+                          region: selectedRegion,
+                          island: selectedRegion // Auto-match island to region
+                        });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select region</option>
@@ -1962,47 +2159,70 @@ const App = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Island <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-500 ml-2">(Auto-matched from Region)</span>
                     </label>
-                    <select
-                      value={newMillData.island || ''}
-                      onChange={(e) => setNewMillData({ ...newMillData, island: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select island</option>
-                      <option value="Sumatra">Sumatra</option>
-                      <option value="Kalimantan">Kalimantan</option>
-                      <option value="Java">Java</option>
-                      <option value="Sulawesi">Sulawesi</option>
-                      <option value="Papua">Papua</option>
-                    </select>
+                    <input
+                      type="text"
+                      value={newMillData.island || newMillData.region || ''}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                      placeholder="Will match selected region"
+                    />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Latitude <span className="text-red-500">*</span>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Coordinates <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="number"
-                        step="0.000001"
-                        value={newMillData.latitude || ''}
-                        onChange={(e) => setNewMillData({ ...newMillData, latitude: parseFloat(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., 1.234567"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newMillData.region) {
+                            showToast('Please select a region first', 'error');
+                            return;
+                          }
+                          const coords = getRandomCoordinatesForRegion(newMillData.region);
+                          setNewMillData({
+                            ...newMillData,
+                            latitude: coords.lat,
+                            longitude: coords.lng
+                          });
+                          showToast(`Generated coordinates for ${newMillData.region}`, 'success');
+                        }}
+                        className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 text-sm font-medium"
+                        title="Generate random coordinates for selected region"
+                      >
+                        🎲 Random Coordinates
+                      </button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Longitude <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="0.000001"
-                        value={newMillData.longitude || ''}
-                        onChange={(e) => setNewMillData({ ...newMillData, longitude: parseFloat(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., 101.234567"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Latitude
+                        </label>
+                        <input
+                          type="number"
+                          step="0.000001"
+                          value={newMillData.latitude || ''}
+                          onChange={(e) => setNewMillData({ ...newMillData, latitude: parseFloat(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., 1.234567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Longitude
+                        </label>
+                        <input
+                          type="number"
+                          step="0.000001"
+                          value={newMillData.longitude || ''}
+                          onChange={(e) => setNewMillData({ ...newMillData, longitude: parseFloat(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., 101.234567"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2083,6 +2303,29 @@ const App = () => {
                         />
                       </div>
                     </div>
+                    {/* FFB Percentage Validation */}
+                    {((newMillData.ffb_source_own_pct || 0) + (newMillData.ffb_source_plasma_pct || 0) + (newMillData.ffb_source_independent_pct || 0)) > 0 && (
+                      <div className={`mt-3 p-3 rounded-md ${
+                        (newMillData.ffb_source_own_pct || 0) + (newMillData.ffb_source_plasma_pct || 0) + (newMillData.ffb_source_independent_pct || 0) === 100
+                          ? 'bg-green-50 border border-green-200'
+                          : 'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-gray-700">Total:</span>
+                          <span className={`font-bold ${
+                            (newMillData.ffb_source_own_pct || 0) + (newMillData.ffb_source_plasma_pct || 0) + (newMillData.ffb_source_independent_pct || 0) === 100
+                              ? 'text-green-700'
+                              : 'text-red-700'
+                          }`}>
+                            {(newMillData.ffb_source_own_pct || 0) + (newMillData.ffb_source_plasma_pct || 0) + (newMillData.ffb_source_independent_pct || 0)}%
+                            {(newMillData.ffb_source_own_pct || 0) + (newMillData.ffb_source_plasma_pct || 0) + (newMillData.ffb_source_independent_pct || 0) === 100
+                              ? ' ✅'
+                              : ' ⚠️ Must equal 100%'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -2313,6 +2556,15 @@ const App = () => {
                         showToast('Please fill all required fields', 'error');
                         return;
                       }
+                    } else if (addMillStep === 3) {
+                      // Validate FFB percentages if any are filled
+                      const ffbTotal = (newMillData.ffb_source_own_pct || 0) +
+                                       (newMillData.ffb_source_plasma_pct || 0) +
+                                       (newMillData.ffb_source_independent_pct || 0);
+                      if (ffbTotal > 0 && ffbTotal !== 100) {
+                        showToast('FFB source percentages must total 100%', 'error');
+                        return;
+                      }
                     }
                     setAddMillStep(addMillStep + 1);
                   }}
@@ -2448,6 +2700,19 @@ const App = () => {
                 </>
               )}
               <button
+                onClick={handleRefreshData}
+                disabled={refreshing}
+                className={`inline-flex items-center px-3 py-1.5 text-xs border rounded-md ${
+                  refreshing
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'border-green-300 text-green-700 hover:bg-green-50'
+                }`}
+                title="Refresh data from Excel files"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh Data'}
+              </button>
+              <button
                 onClick={() => setView('settings')}
                 className="inline-flex items-center px-3 py-1.5 text-xs border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
@@ -2477,14 +2742,31 @@ const App = () => {
                     }
                   }}
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
-                    isActive 
-                      ? `border-${scenario.color}-500 bg-${scenario.color}-50` 
+                    isActive
+                      ? scenario.color === 'blue' ? 'border-blue-500 bg-blue-50' :
+                        scenario.color === 'green' ? 'border-green-500 bg-green-50' :
+                        scenario.color === 'purple' ? 'border-purple-500 bg-purple-50' :
+                        'border-teal-500 bg-teal-50'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center mb-2">
-                    <Icon className={`w-6 h-6 mr-2 ${isActive ? `text-${scenario.color}-600` : 'text-gray-400'}`} />
-                    <span className={`text-sm font-semibold ${isActive ? `text-${scenario.color}-900` : 'text-gray-900'}`}>
+                    <Icon className={`w-6 h-6 mr-2 ${
+                      isActive
+                        ? scenario.color === 'blue' ? 'text-blue-600' :
+                          scenario.color === 'green' ? 'text-green-600' :
+                          scenario.color === 'purple' ? 'text-purple-600' :
+                          'text-teal-600'
+                        : 'text-gray-400'
+                    }`} />
+                    <span className={`text-sm font-semibold ${
+                      isActive
+                        ? scenario.color === 'blue' ? 'text-blue-900' :
+                          scenario.color === 'green' ? 'text-green-900' :
+                          scenario.color === 'purple' ? 'text-purple-900' :
+                          'text-teal-900'
+                        : 'text-gray-900'
+                    }`}>
                       {scenario.title}
                     </span>
                   </div>
@@ -2625,10 +2907,9 @@ const App = () => {
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[140px]"
               >
                 <option value="all">All Regions</option>
-                <option value="Jambi">Jambi</option>
-                <option value="Riau">Riau</option>
-                <option value="Kalimantan">Kalimantan</option>
-                <option value="Sumatra">Sumatra</option>
+                {filterOptions.regions.map(region => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
               </select>
               <select
                 value={filters.group}
@@ -2649,14 +2930,10 @@ const App = () => {
                 <option value="gar-only">🟢 GAR Entities Only</option>
                 <option value="has-competitor">🔴 Has Competitor</option>
                 <option value="no-transactions">No Transactions</option>
-                <option disabled>──────────</option>
-                <option value="GAR Trading">GAR Trading</option>
-                <option value="APC">APC</option>
-                <option value="PHG">PHG</option>
-                <option value="SDG">SDG</option>
-                <option disabled>──────────</option>
-                <option value="Wilmar International">Wilmar International</option>
-                <option value="Musim Mas">Musim Mas</option>
+                {filterOptions.buyers.length > 0 && <option disabled>──────────</option>}
+                {filterOptions.buyers.map(buyer => (
+                  <option key={buyer} value={buyer}>{buyer}</option>
+                ))}
               </select>
               <select
                 value={filters.product}
@@ -2665,8 +2942,9 @@ const App = () => {
                 title="CPO/PK shows all mills trading that product (even if they also trade other products)"
               >
                 <option value="all">All Products</option>
-                <option value="CPO">CPO</option>
-                <option value="PK">PK</option>
+                {filterOptions.products.map(product => (
+                  <option key={product} value={product}>{product}</option>
+                ))}
               </select>
               <select
                 value={filters.risk}
@@ -2674,9 +2952,9 @@ const App = () => {
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[140px]"
               >
                 <option value="all">All Risk</option>
-                <option value="Low">Low Risk</option>
-                <option value="Medium">Medium Risk</option>
-                <option value="High">High Risk</option>
+                {filterOptions.riskLevels.map(risk => (
+                  <option key={risk} value={risk}>{risk} Risk</option>
+                ))}
               </select>
               <select
                 value={filters.irfStatus}
@@ -2684,12 +2962,18 @@ const App = () => {
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[160px]"
               >
                 <option value="all">All IRF Status</option>
-                <option value="Delivering">🟢 Delivering</option>
-                <option value="Progressing">🔵 Progressing</option>
-                <option value="Commitment">🟠 Commitment</option>
-                <option value="Starting">🟣 Starting</option>
-                <option value="Awareness">🟡 Awareness</option>
-                <option value="Unknown">⚪ Unknown</option>
+                {filterOptions.irfStatuses.map(status => {
+                  const icon =
+                    status === 'Delivering' ? '🟢' :
+                    status === 'Progressing' ? '🔵' :
+                    status === 'Commitment' ? '🟠' :
+                    status === 'Starting' ? '🟣' :
+                    status === 'Awareness' ? '🟡' :
+                    '⚪';
+                  return (
+                    <option key={status} value={status}>{icon} {status}</option>
+                  );
+                })}
               </select>
               <select
                 value={filters.distance}
@@ -2708,9 +2992,15 @@ const App = () => {
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[180px]"
               >
                 <option value="all">All Evaluation Status</option>
-                <option value="Evaluated">✅ Evaluated</option>
-                <option value="Under Evaluation">🔄 Under Evaluation</option>
-                <option value="Not Evaluated">⚪ Not Evaluated</option>
+                {filterOptions.evaluationStatuses.map(status => {
+                  const icon =
+                    status === 'Evaluated' ? '✅' :
+                    status === 'Under Evaluation' ? '🔄' :
+                    '⚪';
+                  return (
+                    <option key={status} value={status}>{icon} {status}</option>
+                  );
+                })}
               </select>
               <select
                 value={filters.eligibilityStatus}
@@ -2718,8 +3008,12 @@ const App = () => {
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-w-[180px]"
               >
                 <option value="all">All Eligibility Status</option>
-                <option value="Eligible">✅ Eligible</option>
-                <option value="Not Eligible">❌ Not Eligible</option>
+                {filterOptions.eligibilityStatuses.map(status => {
+                  const icon = status === 'Eligible' ? '✅' : '❌';
+                  return (
+                    <option key={status} value={status}>{icon} {status}</option>
+                  );
+                })}
               </select>
             </div>
             
@@ -2844,6 +3138,7 @@ const App = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Region</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IRF Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">RSPO Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">TTP</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">VDF</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
@@ -2866,7 +3161,7 @@ const App = () => {
                       direction: prev?.key === 'capacity_ton_per_hour' && prev.direction === 'asc' ? 'desc' : 'asc'
                     }))}
                   >
-                    Capacity (T/H) {sortConfig?.key === 'capacity_ton_per_hour' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    Capacity (TPH) {sortConfig?.key === 'capacity_ton_per_hour' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -2898,6 +3193,9 @@ const App = () => {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getIRFStatusBadgeColor(mill.irf_status)}`}>
                         {mill.irf_status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {mill.rspo_status || '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 font-medium">
                       {mill.ttp}%
@@ -2937,7 +3235,9 @@ const App = () => {
                     <td className="px-4 py-3">
                       {mill.risk_level ? (
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          mill.risk_level === 'High' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                          mill.risk_level === 'High' ? 'bg-red-100 text-red-800' :
+                          mill.risk_level === 'Medium' ? 'bg-orange-100 text-orange-800' :
+                          'bg-green-100 text-green-800'
                         }`}>
                           {mill.risk_level}
                         </span>
@@ -2946,7 +3246,7 @@ const App = () => {
                       )}
                     </td>
                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                      {mill.capacity_ton_per_hour ? `${mill.capacity_ton_per_hour} T/H` : 'N/A'}
+                      {mill.capacity_ton_per_hour ? `${mill.capacity_ton_per_hour} TPH` : 'N/A'}
                     </td>
                     <td className="px-4 py-3 text-sm space-x-2 whitespace-nowrap">
                         <button
@@ -3198,7 +3498,7 @@ const App = () => {
                     </div>
                   </div>
     
-                  {selectedMill.current_evaluation_id && (
+                  {(selectedMill.current_evaluation_id || selectedMill.evaluation_status === 'Evaluated') && (
                     <div className="bg-white rounded-lg shadow-sm border">
                       <button
                         onClick={() => setExpandedSection(expandedSection === 'evaluation' ? '' : 'evaluation')}
@@ -3213,7 +3513,9 @@ const App = () => {
                             <div>
                               <p className="text-sm text-gray-600">Risk Level</p>
                               <span className={`inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                selectedMill.risk_level === 'High' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                selectedMill.risk_level === 'High' ? 'bg-red-100 text-red-800' :
+                                selectedMill.risk_level === 'Medium' ? 'bg-orange-100 text-orange-800' :
+                                'bg-green-100 text-green-800'
                               }`}>
                                 {selectedMill.risk_level}
                               </span>
@@ -3513,9 +3815,9 @@ const App = () => {
                     <div>
                       <p className="text-xs text-gray-600">Risk Level</p>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        selectedMill.risk_level === 'Low' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
+                        selectedMill.risk_level === 'Low' ? 'bg-green-100 text-green-800' :
+                        selectedMill.risk_level === 'Medium' ? 'bg-orange-100 text-orange-800' :
+                        'bg-red-100 text-red-800'
                       }`}>
                         {selectedMill.risk_level} Risk
                       </span>
